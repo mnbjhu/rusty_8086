@@ -77,7 +77,7 @@ mod test {
     }
 
     #[test]
-    fn test_16_bit_immediate_to_reg() {
+    fn test_16bit_immediate_to_reg() {
         let mut bytes = vec![
             0b10111001, 0b1100, 0b0, 0b10111001, 0b11110100, 0b11111111, 0b10111010, 0b1101100,
             0b1111, 0b10111010, 0b10010100, 0b11110000,
