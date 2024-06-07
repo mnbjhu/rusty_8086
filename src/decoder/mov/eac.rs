@@ -77,3 +77,51 @@ pub fn decode_eac(first: u8, bytes: &mut std::vec::IntoIter<u8>) -> EffectiveAdd
         _ => panic!("Expected 2 bits, got: {:#b}", first >> 6),
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::decoder::{
+        dis,
+        instr::Instr,
+        mov::{
+            eac::{EffectiveAddress, EffectiveAddressMode},
+            Location, MoveInstr, AL, BX, DX,
+        },
+    };
+
+    #[test]
+    fn test_source_addr_calulation() {
+        let mut bytes = vec![
+            0b10001010, 0b0, 0b10001011, 0b11011, 0b10001011, 0b1010110, 0b0,
+        ]
+        .into_iter();
+
+        let asm = dis(&mut bytes);
+
+        assert_eq!(asm.len(), 3);
+
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(AL),
+                src: Location::Eac(EffectiveAddress::NoOffset(EffectiveAddressMode::BxSi)),
+            })
+        );
+
+        assert_eq!(
+            asm[1],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(BX),
+                src: Location::Eac(EffectiveAddress::NoOffset(EffectiveAddressMode::BpDi)),
+            })
+        );
+
+        assert_eq!(
+            asm[2],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(DX),
+                src: Location::Eac(EffectiveAddress::ByteOffset(EffectiveAddressMode::Bp, 0)),
+            })
+        );
+    }
+}
