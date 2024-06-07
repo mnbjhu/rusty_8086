@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::decoder::mov::eac_mode::{decode_eac_mode, EffectiveAddressMode};
+use super::eac_mode::{decode_eac_mode, EffectiveAddressMode};
 
 #[derive(Debug, PartialEq)]
 pub enum EffectiveAddress {
@@ -13,8 +13,20 @@ impl Display for EffectiveAddress {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             EffectiveAddress::Mode(mode) => write!(f, "{}", mode),
-            EffectiveAddress::Byte(mode, offset) => write!(f, "{} + {}", mode, offset),
-            EffectiveAddress::Word(mode, offset) => write!(f, "{} + {}", mode, offset),
+            EffectiveAddress::Byte(mode, offset) => {
+                if *offset < 0 {
+                    write!(f, "{} - {}", mode, offset.abs())
+                } else {
+                    write!(f, "{} + {}", mode, offset)
+                }
+            }
+            EffectiveAddress::Word(mode, offset) => {
+                if *offset < 0 {
+                    write!(f, "{} - {}", mode, offset.abs())
+                } else {
+                    write!(f, "{} + {}", mode, offset)
+                }
+            }
         }
     }
 }
@@ -42,10 +54,8 @@ mod test {
     use crate::decoder::{
         decode,
         instr::Instr,
-        mov::{
-            eac::{EffectiveAddress, EffectiveAddressMode},
-            Location, MoveInstr, AH, AL, BP, BX, CH, CL, CX, DX,
-        },
+        loc::{eac::EffectiveAddress, eac_mode::EffectiveAddressMode, Location},
+        mov::{MoveInstr, AH, AL, BP, BX, CH, CL, CX, DX},
     };
 
     #[test]

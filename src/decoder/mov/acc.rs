@@ -1,4 +1,4 @@
-use crate::decoder::mov::{Location, MoveInstr};
+use crate::decoder::{loc::Location, mov::MoveInstr};
 
 pub fn decode_mem_to_acc(first: u8, bytes: &mut std::vec::IntoIter<u8>) -> MoveInstr {
     let w = first & 0b00000001;
@@ -38,11 +38,7 @@ pub fn decode_acc_to_mem(first: u8, bytes: &mut std::vec::IntoIter<u8>) -> MoveI
 
 #[cfg(test)]
 mod test {
-    use crate::decoder::{
-        decode,
-        instr::Instr,
-        mov::{Location, MoveInstr},
-    };
+    use crate::decoder::{decode, instr::Instr, loc::Location, mov::MoveInstr};
 
     #[test]
     fn test_memory_to_acc() {

@@ -1,8 +1,11 @@
 use std::vec::IntoIter;
 
-use crate::decoder::mov::{decode_reg, Location, MoveInstr};
+use crate::decoder::{
+    loc::{eac::decode_eac, Location},
+    mov::{decode_reg, MoveInstr},
+};
 
-pub fn decode_mov_im(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
+pub fn decode_mov_imm_to_reg(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
     let w = (first & 0b00001000) >> 3;
     let reg = first & 0b00000111;
     let reg = decode_reg(w, reg);
@@ -10,7 +13,7 @@ pub fn decode_mov_im(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
         let second = bytes.next().unwrap();
         MoveInstr {
             dest: Location::Reg(reg),
-            src: Location::Immediate(second.into()),
+            src: Location::Immediate8(second),
         }
     } else {
         let second = bytes.next().unwrap();
@@ -18,8 +21,27 @@ pub fn decode_mov_im(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
         let second = (third as u16) << 8 | second as u16;
         MoveInstr {
             dest: Location::Reg(reg),
-            src: Location::Immediate(second),
+            src: Location::Immediate16(second),
         }
+    }
+}
+
+pub fn decode_mov_imm_to_rm(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
+    let w = first & 0b00000001;
+    let second = bytes.next().unwrap();
+    let eac = decode_eac(second, bytes);
+    let src = if w == 0 {
+        let second = bytes.next().unwrap();
+        Location::Immediate8(second)
+    } else {
+        let second = bytes.next().unwrap();
+        let third = bytes.next().unwrap();
+        let second = (third as u16) << 8 | second as u16;
+        Location::Immediate16(second)
+    };
+    MoveInstr {
+        dest: Location::Eac(eac),
+        src,
     }
 }
 
@@ -28,7 +50,8 @@ mod test {
     use crate::decoder::{
         decode,
         instr::Instr,
-        mov::{Location, MoveInstr, CH, CL, CX, DX},
+        loc::Location,
+        mov::{MoveInstr, CH, CL, CX, DX},
     };
 
     #[test]
@@ -41,14 +64,14 @@ mod test {
             asm[0],
             Instr::Mov(MoveInstr {
                 dest: Location::Reg(CL),
-                src: Location::Immediate(12),
+                src: Location::Immediate8(12),
             })
         );
         assert_eq!(
             asm[1],
             Instr::Mov(MoveInstr {
                 dest: Location::Reg(CH),
-                src: Location::Immediate(244),
+                src: Location::Immediate8(244),
             })
         );
     }
@@ -69,7 +92,7 @@ mod test {
             asm[0],
             Instr::Mov(MoveInstr {
                 dest: Location::Reg(CX),
-                src: Location::Immediate(12),
+                src: Location::Immediate16(12),
             })
         );
 
@@ -77,7 +100,7 @@ mod test {
             asm[1],
             Instr::Mov(MoveInstr {
                 dest: Location::Reg(CX),
-                src: Location::Immediate(65524),
+                src: Location::Immediate16(65524),
             })
         );
 
@@ -85,7 +108,7 @@ mod test {
             asm[2],
             Instr::Mov(MoveInstr {
                 dest: Location::Reg(DX),
-                src: Location::Immediate(3948),
+                src: Location::Immediate16(3948),
             })
         );
 
@@ -93,7 +116,7 @@ mod test {
             asm[3],
             Instr::Mov(MoveInstr {
                 dest: Location::Reg(DX),
-                src: Location::Immediate(61588),
+                src: Location::Immediate16(61588),
             })
         );
     }

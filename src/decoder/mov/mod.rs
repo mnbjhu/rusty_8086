@@ -1,11 +1,9 @@
 use core::panic;
 use std::{fmt::Display, vec::IntoIter};
 
-use crate::decoder::mov::eac::{decode_eac, EffectiveAddress};
+use super::loc::{eac::decode_eac, Location};
 
 pub mod acc;
-pub mod eac;
-pub mod eac_mode;
 pub mod immediate;
 
 #[derive(Debug, PartialEq)]
@@ -14,33 +12,25 @@ pub struct MoveInstr {
     pub src: Location,
 }
 
-#[derive(Debug, PartialEq)]
-pub enum Location {
-    Reg(&'static str),
-    Mem(u16),
-    Immediate(u16),
-    Eac(EffectiveAddress),
-}
+pub const AX: &str = "ax";
+pub const CX: &str = "cx";
+pub const DX: &str = "dx";
+pub const BX: &str = "bx";
+pub const SP: &str = "sp";
+pub const BP: &str = "bp";
+pub const SI: &str = "si";
+pub const DI: &str = "di";
 
-const AX: &str = "ax";
-const CX: &str = "cx";
-const DX: &str = "dx";
-const BX: &str = "bx";
-const SP: &str = "sp";
-const BP: &str = "bp";
-const SI: &str = "si";
-const DI: &str = "di";
+pub const AL: &str = "al";
+pub const CL: &str = "cl";
+pub const DL: &str = "dl";
+pub const BL: &str = "bl";
+pub const AH: &str = "ah";
+pub const CH: &str = "ch";
+pub const DH: &str = "dh";
+pub const BH: &str = "bh";
 
-const AL: &str = "al";
-const CL: &str = "cl";
-const DL: &str = "dl";
-const BL: &str = "bl";
-const AH: &str = "ah";
-const CH: &str = "ch";
-const DH: &str = "dh";
-const BH: &str = "bh";
-
-pub fn decode_mov(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
+pub fn decode_rm_to_from_reg(first: u8, bytes: &mut IntoIter<u8>) -> (Location, Location) {
     let second = bytes.next().unwrap();
     let d = first & 0b00000010;
     let w = first & 0b00000001;
@@ -64,15 +54,9 @@ pub fn decode_mov(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
     };
 
     if d == 0 {
-        MoveInstr {
-            dest: rm,
-            src: Location::Reg(reg),
-        }
+        (rm, Location::Reg(reg))
     } else {
-        MoveInstr {
-            dest: Location::Reg(reg),
-            src: rm,
-        }
+        (Location::Reg(reg), rm)
     }
 }
 
@@ -100,17 +84,14 @@ pub fn decode_reg(w: u8, reg: u8) -> &'static str {
 
 impl Display for MoveInstr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "mov {}, {}", self.dest, self.src)
-    }
-}
-
-impl Display for Location {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Location::Reg(reg) => write!(f, "{}", reg),
-            Location::Mem(addr) => write!(f, "[{}]", addr),
-            Location::Immediate(val) => write!(f, "{}", val),
-            Location::Eac(eac) => write!(f, "[{}]", eac),
+        match (&self.dest, &self.src) {
+            (Location::Eac(_), Location::Immediate8(_)) => {
+                write!(f, "mov {}, byte {}", self.dest, self.src)
+            }
+            (Location::Eac(_), Location::Immediate16(_)) => {
+                write!(f, "mov {}, word {}", self.dest, self.src)
+            }
+            _ => write!(f, "mov {}, {}", self.dest, self.src),
         }
     }
 }
@@ -127,9 +108,9 @@ mod test {
     fn basic_test() {
         let bytes = vec![0b10001001, 0b11011001];
         let mut bytes = bytes.into_iter();
-        let instr = super::decode_mov(bytes.next().unwrap(), &mut bytes);
-        assert_eq!(instr.dest, Location::Reg(CX));
-        assert_eq!(instr.src, Location::Reg(BX));
+        let (dest, src) = super::decode_rm_to_from_reg(bytes.next().unwrap(), &mut bytes);
+        assert_eq!(dest, Location::Reg(CX));
+        assert_eq!(src, Location::Reg(BX));
     }
 
     #[test]
