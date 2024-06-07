@@ -3,8 +3,15 @@ use std::{fmt::Display, vec::IntoIter};
 
 #[derive(Debug, PartialEq)]
 pub struct MoveInstr {
-    pub dest: &'static str,
-    pub src: &'static str,
+    pub dest: Location,
+    pub src: Location,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum Location {
+    Reg(&'static str),
+    Mem(u16),
+    Immediate(u16),
 }
 
 const AX: &str = "ax";
@@ -39,9 +46,15 @@ pub fn decode_mov(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
     let reg = decode_reg(w, reg);
     let rm = decode_reg(w, rm);
     if d == 0 {
-        MoveInstr { dest: rm, src: reg }
+        MoveInstr {
+            dest: Location::Reg(rm),
+            src: Location::Reg(reg),
+        }
     } else {
-        MoveInstr { dest: reg, src: rm }
+        MoveInstr {
+            dest: Location::Reg(reg),
+            src: Location::Reg(rm),
+        }
     }
 }
 
@@ -73,12 +86,22 @@ impl Display for MoveInstr {
     }
 }
 
+impl Display for Location {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Location::Reg(reg) => write!(f, "{}", reg),
+            Location::Mem(addr) => write!(f, "[{}]", addr),
+            Location::Immediate(val) => write!(f, "{:#x}", val),
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::decoder::{
         dis,
         instr::Instr,
-        mov::{MoveInstr, AH, AL, AX, BP, BX, CH, CL, CX, DI, DX, SI, SP},
+        mov::{Location, MoveInstr, AH, AL, AX, BP, BX, CH, CL, CX, DI, DX, SI, SP},
     };
 
     #[test]
@@ -86,8 +109,8 @@ mod test {
         let bytes = vec![0b10001001, 0b11011001];
         let mut bytes = bytes.into_iter();
         let instr = super::decode_mov(bytes.next().unwrap(), &mut bytes);
-        assert_eq!(instr.dest, CX);
-        assert_eq!(instr.src, BX);
+        assert_eq!(instr.dest, Location::Reg(CX));
+        assert_eq!(instr.src, Location::Reg(BX));
     }
 
     #[test]
@@ -104,16 +127,104 @@ mod test {
         println!("{:?}", asm);
         assert_eq!(asm.len(), 11);
 
-        assert_eq!(asm[0], Instr::Mov(MoveInstr { dest: CX, src: BX }));
-        assert_eq!(asm[1], Instr::Mov(MoveInstr { dest: CH, src: AH }));
-        assert_eq!(asm[2], Instr::Mov(MoveInstr { dest: DX, src: BX }));
-        assert_eq!(asm[3], Instr::Mov(MoveInstr { dest: SI, src: BX }));
-        assert_eq!(asm[4], Instr::Mov(MoveInstr { dest: BX, src: DI }));
-        assert_eq!(asm[5], Instr::Mov(MoveInstr { dest: AL, src: CL }));
-        assert_eq!(asm[6], Instr::Mov(MoveInstr { dest: CH, src: CH }));
-        assert_eq!(asm[7], Instr::Mov(MoveInstr { dest: BX, src: AX }));
-        assert_eq!(asm[8], Instr::Mov(MoveInstr { dest: BX, src: SI }));
-        assert_eq!(asm[9], Instr::Mov(MoveInstr { dest: SP, src: DI }));
-        assert_eq!(asm[10], Instr::Mov(MoveInstr { dest: BP, src: AX }));
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(CX),
+                src: Location::Reg(BX)
+            })
+        );
+        assert_eq!(
+            asm[1],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(CH),
+                src: Location::Reg(AH)
+            })
+        );
+        assert_eq!(
+            asm[2],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(DX),
+                src: Location::Reg(BX)
+            })
+        );
+        assert_eq!(
+            asm[3],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(SI),
+                src: Location::Reg(BX)
+            })
+        );
+        assert_eq!(
+            asm[4],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(BX),
+                src: Location::Reg(DI)
+            })
+        );
+        assert_eq!(
+            asm[5],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(AL),
+                src: Location::Reg(CL)
+            })
+        );
+        assert_eq!(
+            asm[6],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(CH),
+                src: Location::Reg(CH)
+            })
+        );
+        assert_eq!(
+            asm[7],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(BX),
+                src: Location::Reg(AX)
+            })
+        );
+        assert_eq!(
+            asm[8],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(BX),
+                src: Location::Reg(SI)
+            })
+        );
+        assert_eq!(
+            asm[9],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(SP),
+                src: Location::Reg(DI)
+            })
+        );
+        assert_eq!(
+            asm[10],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(BP),
+                src: Location::Reg(AX)
+            })
+        );
+    }
+
+    #[test]
+    fn test_8bit_immediate_to_reg() {
+        let mut bytes = vec![0b10110001, 0b1100, 0b10110101, 0b11110100].into_iter();
+        let asm = dis(&mut bytes);
+
+        assert_eq!(asm.len(), 2);
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(CL),
+                src: Location::Immediate(12),
+            })
+        );
+        assert_eq!(
+            asm[1],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(CH),
+                src: Location::Immediate(244),
+            })
+        );
     }
 }
