@@ -45,9 +45,9 @@ impl Display for OpInstr {
 mod test {
     use crate::decoder::{
         decode,
-        instr::Instr,
+        instr::{decode_instr, Instr},
         loc::Location,
-        mov::{AX, BX},
+        mov::{AX, BX, CX},
         op::{OpInstr, OpKind},
     };
 
@@ -83,6 +83,19 @@ mod test {
                 kind: OpKind::Cmp,
                 dest: Location::Reg(AX),
                 src: Location::Reg(BX),
+            })
+        );
+    }
+
+    #[test]
+    fn test_op_imm_with_rm() {
+        let instr = decode_instr(0b10000011, &mut vec![0b11000001, 0b1100].into_iter(), 0);
+        assert_eq!(
+            instr,
+            Instr::Op(OpInstr {
+                kind: OpKind::Add,
+                dest: Location::Reg(CX),
+                src: Location::Immediate8(12),
             })
         );
     }

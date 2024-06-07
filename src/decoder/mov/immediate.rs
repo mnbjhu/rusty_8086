@@ -26,9 +26,12 @@ pub fn decode_mov_imm_to_reg(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
     }
 }
 
-pub fn decode_mov_imm_to_rm(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
+pub fn decode_mov_imm_to_rm(
+    first: u8,
+    second: u8,
+    bytes: &mut IntoIter<u8>,
+) -> (Location, Location) {
     let w = first & 0b00000001;
-    let second = bytes.next().unwrap();
     let eac = decode_eac(second, bytes);
     let src = if w == 0 {
         let second = bytes.next().unwrap();
@@ -39,10 +42,7 @@ pub fn decode_mov_imm_to_rm(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
         let second = (third as u16) << 8 | second as u16;
         Location::Immediate16(second)
     };
-    MoveInstr {
-        dest: Location::Eac(eac),
-        src,
-    }
+    (Location::Eac(eac), src)
 }
 
 #[cfg(test)]
