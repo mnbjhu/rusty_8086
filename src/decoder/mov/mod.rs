@@ -4,6 +4,7 @@ use std::{fmt::Display, vec::IntoIter};
 use crate::decoder::mov::eac::{decode_eac, EffectiveAddress};
 
 pub mod eac;
+pub mod eac_mode;
 pub mod immediate;
 
 #[derive(Debug, PartialEq)]
@@ -108,10 +109,7 @@ mod test {
     use crate::decoder::{
         dis,
         instr::Instr,
-        mov::{
-            eac::{EffectiveAddress, EffectiveAddressMode},
-            Location, MoveInstr, AH, AL, AX, BP, BX, CH, CL, CX, DI, DL, DX, SI, SP,
-        },
+        mov::{Location, MoveInstr, AH, AL, AX, BP, BX, CH, CL, CX, DI, DX, SI, SP},
     };
 
     #[test]
