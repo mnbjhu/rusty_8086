@@ -107,7 +107,7 @@ impl Display for Location {
 #[cfg(test)]
 mod test {
     use crate::decoder::{
-        dis,
+        decode,
         instr::Instr,
         mov::{Location, MoveInstr, AH, AL, AX, BP, BX, CH, CL, CX, DI, DX, SI, SP},
     };
@@ -130,7 +130,7 @@ mod test {
             0b11000101,
         ]
         .into_iter();
-        let asm = dis(&mut bytes);
+        let asm = decode(&mut bytes);
 
         println!("{:?}", asm);
         assert_eq!(asm.len(), 11);

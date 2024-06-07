@@ -26,7 +26,7 @@ pub fn decode_mov_im(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
 #[cfg(test)]
 mod test {
     use crate::decoder::{
-        dis,
+        decode,
         instr::Instr,
         mov::{Location, MoveInstr, CH, CL, CX, DX},
     };
@@ -34,7 +34,7 @@ mod test {
     #[test]
     fn test_8bit_immediate_to_reg() {
         let mut bytes = vec![0b10110001, 0b1100, 0b10110101, 0b11110100].into_iter();
-        let asm = dis(&mut bytes);
+        let asm = decode(&mut bytes);
 
         assert_eq!(asm.len(), 2);
         assert_eq!(
@@ -61,7 +61,7 @@ mod test {
         ]
         .into_iter();
 
-        let asm = dis(&mut bytes);
+        let asm = decode(&mut bytes);
 
         assert_eq!(asm.len(), 4);
 

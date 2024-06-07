@@ -40,7 +40,7 @@ pub fn decode_eac(first: u8, bytes: &mut std::vec::IntoIter<u8>) -> EffectiveAdd
 #[cfg(test)]
 mod test {
     use crate::decoder::{
-        dis,
+        decode,
         instr::Instr,
         mov::{
             eac::{EffectiveAddress, EffectiveAddressMode},
@@ -55,7 +55,7 @@ mod test {
         ]
         .into_iter();
 
-        let asm = dis(&mut bytes);
+        let asm = decode(&mut bytes);
 
         assert_eq!(asm.len(), 3);
 
@@ -87,7 +87,7 @@ mod test {
     #[test]
     fn test_source_addr_calulation_with_8bit_offset() {
         let mut bytes = vec![0b10001010, 0b1100000, 0b100].into_iter();
-        let asm = dis(&mut bytes);
+        let asm = decode(&mut bytes);
 
         assert_eq!(asm.len(), 1);
 
@@ -103,7 +103,7 @@ mod test {
     #[test]
     fn test_source_addr_calulation_with_16bit_offset() {
         let mut bytes = vec![0b10001010, 0b10000000, 0b10000111, 0b10011].into_iter();
-        let asm = dis(&mut bytes);
+        let asm = decode(&mut bytes);
 
         assert_eq!(asm.len(), 1);
 
@@ -122,7 +122,7 @@ mod test {
             0b10001001, 0b1001, 0b10001000, 0b1010, 0b10001000, 0b1101110, 0b0,
         ]
         .into_iter();
-        let asm = dis(&mut bytes);
+        let asm = decode(&mut bytes);
 
         assert_eq!(asm.len(), 3);
 
