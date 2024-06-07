@@ -3,7 +3,7 @@ use std::vec::IntoIter;
 use crate::decoder::mov::{decode_reg, Location, MoveInstr};
 
 pub fn decode_mov_im(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
-    let w = first & 0b00001000;
+    let w = (first & 0b00001000) >> 3;
     let reg = first & 0b00000111;
     let reg = decode_reg(w, reg);
     if w == 0 {

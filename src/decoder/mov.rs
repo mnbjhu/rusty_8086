@@ -76,7 +76,7 @@ pub fn decode_reg(w: u8, reg: u8) -> &'static str {
         (0, 0b101) => CH,
         (0, 0b110) => DH,
         (0, 0b111) => BH,
-        _ => panic!("unexpected reg {}", reg),
+        _ => panic!("unexpected reg: {}, w: {}", reg, w),
     }
 }
 
@@ -224,6 +224,51 @@ mod test {
             Instr::Mov(MoveInstr {
                 dest: Location::Reg(CH),
                 src: Location::Immediate(244),
+            })
+        );
+    }
+
+    #[test]
+    fn test_16_bit_immediate_to_reg() {
+        let mut bytes = vec![
+            0b10111001, 0b1100, 0b0, 0b10111001, 0b11110100, 0b11111111, 0b10111010, 0b1101100,
+            0b1111, 0b10111010, 0b10010100, 0b11110000,
+        ]
+        .into_iter();
+
+        let asm = dis(&mut bytes);
+
+        assert_eq!(asm.len(), 4);
+
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(CX),
+                src: Location::Immediate(12),
+            })
+        );
+
+        assert_eq!(
+            asm[1],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(CX),
+                src: Location::Immediate(65524),
+            })
+        );
+
+        assert_eq!(
+            asm[2],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(DX),
+                src: Location::Immediate(3948),
+            })
+        );
+
+        assert_eq!(
+            asm[3],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(DX),
+                src: Location::Immediate(61588),
             })
         );
     }
