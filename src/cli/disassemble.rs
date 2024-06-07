@@ -1,19 +1,10 @@
 use std::path::PathBuf;
 
-use crate::decoder::{instr::Instr, mov::decode_mov};
+use crate::decoder::dis;
 
 pub fn disassemble(path: &PathBuf) {
-    let bytes = std::fs::read(path).unwrap();
-    let instrs = bytes.chunks(2);
-    let mut found = vec![];
-    for instr in instrs {
-        let first = instr.first().unwrap();
-        let second = instr.get(1).unwrap();
-        match first & second {
-            0b10001000 => found.push(Instr::Mov(decode_mov(*first, *second))),
-            _ => {}
-        }
-    }
+    let mut bytes = std::fs::read(path).unwrap().into_iter();
+    let found = dis(&mut bytes);
 
     println!("bits 16");
     for instr in found {

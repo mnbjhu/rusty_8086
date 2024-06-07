@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use crate::decoder::mov::MoveInstr;
 
+#[derive(Debug, PartialEq)]
 pub enum Instr {
     Mov(MoveInstr),
 }
