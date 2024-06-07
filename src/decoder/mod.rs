@@ -1,10 +1,9 @@
 use std::vec::IntoIter;
 
-use crate::decoder::{instr::Instr, mov_im::decode_mov_im};
+use crate::decoder::{instr::Instr, mov::immediate::decode_mov_im};
 
 pub mod instr;
 pub mod mov;
-pub mod mov_im;
 
 use mov::decode_mov;
 

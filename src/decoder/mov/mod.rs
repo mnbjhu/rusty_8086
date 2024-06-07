@@ -1,6 +1,11 @@
 use core::panic;
 use std::{fmt::Display, vec::IntoIter};
 
+use crate::decoder::mov::eac::{decode_eac, EffectiveAddress};
+
+pub mod eac;
+pub mod immediate;
+
 #[derive(Debug, PartialEq)]
 pub struct MoveInstr {
     pub dest: Location,
@@ -12,6 +17,7 @@ pub enum Location {
     Reg(&'static str),
     Mem(u16),
     Immediate(u16),
+    Eac(EffectiveAddress),
 }
 
 const AX: &str = "ax";
@@ -36,24 +42,24 @@ pub fn decode_mov(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
     let second = bytes.next().unwrap();
     let d = first & 0b00000010;
     let w = first & 0b00000001;
-    let mod_ = second & 0b11000000;
-    if mod_ != 0b11000000 {
-        panic!("Not memory 'mov' not implemented");
-    }
     let reg = (second & 0b000111000) >> 3;
-    let rm = second & 0b000000111;
-
     let reg = decode_reg(w, reg);
-    let rm = decode_reg(w, rm);
+    let mod_ = second & 0b11000000;
+    let rm = if mod_ != 0b11000000 {
+        Location::Eac(decode_eac(second, bytes))
+    } else {
+        Location::Reg(decode_reg(w, second & 0b000000111))
+    };
+
     if d == 0 {
         MoveInstr {
-            dest: Location::Reg(rm),
+            dest: rm,
             src: Location::Reg(reg),
         }
     } else {
         MoveInstr {
             dest: Location::Reg(reg),
-            src: Location::Reg(rm),
+            src: rm,
         }
     }
 }
@@ -92,6 +98,7 @@ impl Display for Location {
             Location::Reg(reg) => write!(f, "{}", reg),
             Location::Mem(addr) => write!(f, "[{}]", addr),
             Location::Immediate(val) => write!(f, "{:#x}", val),
+            Location::Eac(eac) => write!(f, "{}", eac),
         }
     }
 }
@@ -101,7 +108,10 @@ mod test {
     use crate::decoder::{
         dis,
         instr::Instr,
-        mov::{Location, MoveInstr, AH, AL, AX, BP, BX, CH, CL, CX, DI, DX, SI, SP},
+        mov::{
+            eac::{EffectiveAddress, EffectiveAddressMode},
+            Location, MoveInstr, AH, AL, AX, BP, BX, CH, CL, CX, DI, DL, DX, SI, SP,
+        },
     };
 
     #[test]
@@ -269,6 +279,42 @@ mod test {
             Instr::Mov(MoveInstr {
                 dest: Location::Reg(DX),
                 src: Location::Immediate(61588),
+            })
+        );
+    }
+
+    #[test]
+    fn test_source_addr_calulation() {
+        let mut bytes = vec![
+            0b10001010, 0b0, 0b10001011, 0b11011, 0b10001011, 0b1010110, 0b0,
+        ]
+        .into_iter();
+
+        let asm = dis(&mut bytes);
+
+        assert_eq!(asm.len(), 3);
+
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(AL),
+                src: Location::Eac(EffectiveAddress::NoOffset(EffectiveAddressMode::BxSi)),
+            })
+        );
+
+        assert_eq!(
+            asm[1],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(BX),
+                src: Location::Eac(EffectiveAddress::NoOffset(EffectiveAddressMode::BpDi)),
+            })
+        );
+
+        assert_eq!(
+            asm[2],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(DX),
+                src: Location::Eac(EffectiveAddress::ByteOffset(EffectiveAddressMode::Bp, 0)),
             })
         );
     }
