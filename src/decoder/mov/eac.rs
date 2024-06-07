@@ -85,7 +85,7 @@ mod test {
         instr::Instr,
         mov::{
             eac::{EffectiveAddress, EffectiveAddressMode},
-            Location, MoveInstr, AL, BX, DX,
+            Location, MoveInstr, AH, AL, BX, CH, CL, CX, DX,
         },
     };
 
@@ -121,6 +121,76 @@ mod test {
             Instr::Mov(MoveInstr {
                 dest: Location::Reg(DX),
                 src: Location::Eac(EffectiveAddress::ByteOffset(EffectiveAddressMode::Bp, 0)),
+            })
+        );
+    }
+
+    #[test]
+    fn test_source_addr_calulation_with_8bit_offset() {
+        let mut bytes = vec![0b10001010, 0b1100000, 0b100].into_iter();
+        let asm = dis(&mut bytes);
+
+        assert_eq!(asm.len(), 1);
+
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(AH),
+                src: Location::Eac(EffectiveAddress::ByteOffset(EffectiveAddressMode::BxSi, 4)),
+            })
+        );
+    }
+
+    #[test]
+    fn test_source_addr_calulation_with_16bit_offset() {
+        let mut bytes = vec![0b10001010, 0b10000000, 0b10000111, 0b10011].into_iter();
+        let asm = dis(&mut bytes);
+
+        assert_eq!(asm.len(), 1);
+
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(AL),
+                src: Location::Eac(EffectiveAddress::WordOffset(
+                    EffectiveAddressMode::BxSi,
+                    4999
+                )),
+            })
+        );
+    }
+
+    #[test]
+    fn test_dest_add_calculation() {
+        let mut bytes = vec![
+            0b10001001, 0b1001, 0b10001000, 0b1010, 0b10001000, 0b1101110, 0b0,
+        ]
+        .into_iter();
+        let asm = dis(&mut bytes);
+
+        assert_eq!(asm.len(), 3);
+
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                dest: Location::Eac(EffectiveAddress::NoOffset(EffectiveAddressMode::BxDi,)),
+                src: Location::Reg(CX),
+            })
+        );
+
+        assert_eq!(
+            asm[1],
+            Instr::Mov(MoveInstr {
+                dest: Location::Eac(EffectiveAddress::NoOffset(EffectiveAddressMode::BpSi,)),
+                src: Location::Reg(CL),
+            })
+        );
+
+        assert_eq!(
+            asm[2],
+            Instr::Mov(MoveInstr {
+                dest: Location::Eac(EffectiveAddress::ByteOffset(EffectiveAddressMode::Bp, 0)),
+                src: Location::Reg(CH),
             })
         );
     }
