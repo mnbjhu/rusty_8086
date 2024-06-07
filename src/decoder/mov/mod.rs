@@ -3,6 +3,7 @@ use std::{fmt::Display, vec::IntoIter};
 
 use crate::decoder::mov::eac::{decode_eac, EffectiveAddress};
 
+pub mod acc;
 pub mod eac;
 pub mod eac_mode;
 pub mod immediate;
@@ -47,7 +48,17 @@ pub fn decode_mov(first: u8, bytes: &mut IntoIter<u8>) -> MoveInstr {
     let reg = decode_reg(w, reg);
     let mod_ = second & 0b11000000;
     let rm = if mod_ != 0b11000000 {
-        Location::Eac(decode_eac(second, bytes))
+        if (second & 0b00000111) == 0b110 && mod_ == 0 {
+            if w == 0 {
+                Location::Mem(bytes.next().unwrap() as u16)
+            } else {
+                let low = bytes.next().unwrap();
+                let high = bytes.next().unwrap();
+                Location::Mem((high as u16) << 8 | low as u16)
+            }
+        } else {
+            Location::Eac(decode_eac(second, bytes))
+        }
     } else {
         Location::Reg(decode_reg(w, second & 0b000000111))
     };
@@ -98,8 +109,8 @@ impl Display for Location {
         match self {
             Location::Reg(reg) => write!(f, "{}", reg),
             Location::Mem(addr) => write!(f, "[{}]", addr),
-            Location::Immediate(val) => write!(f, "{:#x}", val),
-            Location::Eac(eac) => write!(f, "{}", eac),
+            Location::Immediate(val) => write!(f, "{}", val),
+            Location::Eac(eac) => write!(f, "[{}]", eac),
         }
     }
 }

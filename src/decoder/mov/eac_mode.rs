@@ -15,10 +15,10 @@ pub enum EffectiveAddressMode {
 impl Display for EffectiveAddressMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            EffectiveAddressMode::BxSi => write!(f, "bx+si"),
-            EffectiveAddressMode::BxDi => write!(f, "bx+di"),
-            EffectiveAddressMode::BpSi => write!(f, "bp+si"),
-            EffectiveAddressMode::BpDi => write!(f, "bp+di"),
+            EffectiveAddressMode::BxSi => write!(f, "bx + si"),
+            EffectiveAddressMode::BxDi => write!(f, "bx + di"),
+            EffectiveAddressMode::BpSi => write!(f, "bp + si"),
+            EffectiveAddressMode::BpDi => write!(f, "bp + di"),
             EffectiveAddressMode::Si => write!(f, "si"),
             EffectiveAddressMode::Di => write!(f, "di"),
             EffectiveAddressMode::Bp => write!(f, "bp"),

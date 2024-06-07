@@ -13,8 +13,8 @@ impl Display for EffectiveAddress {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             EffectiveAddress::Mode(mode) => write!(f, "{}", mode),
-            EffectiveAddress::Byte(mode, offset) => write!(f, "{}+{}", mode, offset),
-            EffectiveAddress::Word(mode, offset) => write!(f, "{}+{}", mode, offset),
+            EffectiveAddress::Byte(mode, offset) => write!(f, "{} + {}", mode, offset),
+            EffectiveAddress::Word(mode, offset) => write!(f, "{} + {}", mode, offset),
         }
     }
 }
@@ -44,7 +44,7 @@ mod test {
         instr::Instr,
         mov::{
             eac::{EffectiveAddress, EffectiveAddressMode},
-            Location, MoveInstr, AH, AL, BX, CH, CL, CX, DX,
+            Location, MoveInstr, AH, AL, BP, BX, CH, CL, CX, DX,
         },
     };
 
@@ -147,6 +147,34 @@ mod test {
             Instr::Mov(MoveInstr {
                 dest: Location::Eac(EffectiveAddress::Byte(EffectiveAddressMode::Bp, 0)),
                 src: Location::Reg(CH),
+            })
+        );
+    }
+
+    #[test]
+    fn test_direct_access() {
+        let mut bytes = vec![
+            0b10001011, 0b101110, 0b101, 0b0, 0b10001011, 0b11110, 0b10000010, 0b1101,
+        ]
+        .into_iter();
+
+        let asm = decode(&mut bytes);
+
+        assert_eq!(asm.len(), 2);
+
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(BP),
+                src: Location::Mem(5),
+            })
+        );
+
+        assert_eq!(
+            asm[1],
+            Instr::Mov(MoveInstr {
+                dest: Location::Reg(BX),
+                src: Location::Mem(3458),
             })
         );
     }
