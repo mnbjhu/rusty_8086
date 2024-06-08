@@ -112,7 +112,7 @@ mod test {
     use crate::decoder::{
         decode,
         instr::Instr,
-        loc::Location,
+        loc::{eac::EffectiveAddress, eac_mode::EffectiveAddressMode, Location},
         mov::{AX, BX, CX, SI},
         op::{OpInstr, OpKind},
     };
@@ -185,5 +185,39 @@ mod test {
                 src: Location::Immediate8(2),
             })
         );
+    }
+
+    #[test]
+    fn test_display_op_kind() {
+        assert_eq!(format!("{}", OpKind::Add), "add");
+        assert_eq!(format!("{}", OpKind::Sub), "sub");
+        assert_eq!(format!("{}", OpKind::Cmp), "cmp");
+    }
+
+    #[test]
+    fn test_display_op_instr() {
+        let instr = OpInstr {
+            kind: OpKind::Add,
+            dest: Location::Reg(AX),
+            src: Location::Reg(BX),
+        };
+
+        assert_eq!(format!("{}", instr), "add ax, bx");
+
+        let instr = OpInstr {
+            kind: OpKind::Add,
+            dest: Location::Eac(EffectiveAddress::Mode(EffectiveAddressMode::Bx)),
+            src: Location::Immediate8(12),
+        };
+
+        assert_eq!(format!("{}", instr), "add [bx], byte 12");
+
+        let instr = OpInstr {
+            kind: OpKind::Add,
+            dest: Location::Eac(EffectiveAddress::Mode(EffectiveAddressMode::Bx)),
+            src: Location::Immediate16(12),
+        };
+
+        assert_eq!(format!("{}", instr), "add [bx], word 12");
     }
 }
