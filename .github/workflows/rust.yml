@@ -33,6 +33,7 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy -- -D warnings
       - name: Publish Test Results
+        id: test-results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
