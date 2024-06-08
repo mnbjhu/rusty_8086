@@ -31,3 +31,35 @@ pub fn decode_instr(byte: u8, bytes: &mut IntoIter<u8>, count: i32) -> Instr {
     }
     panic!("Unknown instruction #{}: {:#10b} ", count, byte)
 }
+
+#[cfg(test)]
+mod test {
+    use crate::decoder::{
+        loc::Location,
+        mov::{AX, BX},
+        op::OpKind,
+    };
+
+    use super::*;
+
+    #[test]
+    fn test_mov_display() {
+        let mov = Instr::Mov(MoveInstr {
+            dest: Location::Reg(AX),
+            src: Location::Reg(BX),
+        });
+
+        assert_eq!(mov.to_string(), "mov ax, bx");
+    }
+
+    #[test]
+    fn test_op_display() {
+        let op = Instr::Op(OpInstr {
+            kind: OpKind::Add,
+            dest: Location::Reg(AX),
+            src: Location::Reg(BX),
+        });
+
+        assert_eq!(op.to_string(), "add ax, bx");
+    }
+}
