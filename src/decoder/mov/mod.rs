@@ -41,20 +41,25 @@ pub const BH: &str = "bh";
 
 pub fn decode_mov(byte: u8, bytes: &mut IntoIter<u8>) -> Option<Instr> {
     match byte {
+        // Register/Memory to/from Register
         _ if 0b10001000 == byte & 0b11111100 => {
             let (dest, src) = decode_rm_to_from_reg(byte, bytes);
             Some(Instr::Mov(MoveInstr { dest, src }))
         }
+        // Immediate to Register/Memory
         _ if 0b10110000 == byte & 0b11110000 => {
             let (dest, src) = decode_imm_to_reg(byte, bytes);
             Some(Instr::Mov(MoveInstr { dest, src }))
         }
+        // Immediate to Register
         _ if 0b11000110 == byte & 0b11111110 => {
             let second = bytes.next().unwrap();
             let (dest, src) = decode_imm_to_rm(byte, second, bytes);
             Some(Instr::Mov(MoveInstr { dest, src }))
         }
+        // Memory to Accumulator
         _ if 0b10100000 == byte & 0b11111110 => Some(Instr::Mov(decode_mem_to_acc(byte, bytes))),
+        // Accumulator to Memory
         _ if 0b10100010 == byte & 0b11111110 => Some(Instr::Mov(decode_acc_to_mem(byte, bytes))),
         _ => None,
     }
