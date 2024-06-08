@@ -25,14 +25,32 @@ jobs:
           toolchain: nightly
       - run: cargo build
       - run: cargo +nightly test -- --format=junit -Z unstable-options --report-time > test-report.xml
+        continue-on-error: true
         env:
           RUST_BACKTRACE: 1
       - run: cargo fmt --all -- --check
       - run: cargo clippy -- -D warnings
       - name: Publish Report
         uses: turing85/publish-report@v2
+        if: ${{ always() }}
         with:
-          checkout: "true"
+          # cancel-workflow-on-error: 'false' # If we do not want to cancel the whole workflow execution on error
+          # checkout: 'true' # not needed; project is already checked out
           comment-header: my-comment-header
-          comment-message-recreate: Hello
-          recreate-comment: true
+          comment-message-success: |
+            YAY! {0} passed!  
+
+            {1} tests were successful, {2} tests failed, {3} test were skipped.
+
+            The report can be found [here]({4}).
+
+          comment-message-failure: |
+            On no! {0} failed!  
+
+            {1} tests were successful, {2} tests failed, {3} test were skipped.
+
+            The report can be found [here]({4}).
+          report-fail-on-error: true # to fail when tests failed
+          report-name: Tests
+          report-path: "test-report.xml"
+          report-reporter: java-junit
