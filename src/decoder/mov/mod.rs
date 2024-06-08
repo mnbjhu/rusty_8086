@@ -101,6 +101,7 @@ mod test {
     use crate::decoder::{
         decode,
         instr::Instr,
+        loc::{eac::EffectiveAddress, eac_mode::EffectiveAddressMode},
         mov::{Location, MoveInstr, AH, AL, AX, BP, BX, CH, CL, CX, DI, DX, SI, SP},
     };
 
@@ -204,5 +205,35 @@ mod test {
                 src: Location::Reg(AX)
             })
         );
+    }
+
+    #[test]
+    fn test_display_mov_basic() {
+        let mov = Instr::Mov(MoveInstr {
+            dest: Location::Reg(AX),
+            src: Location::Reg(BX),
+        });
+
+        assert_eq!(mov.to_string(), "mov ax, bx");
+    }
+
+    #[test]
+    fn test_display_mov_mem_word() {
+        let mov = Instr::Mov(MoveInstr {
+            dest: Location::Eac(EffectiveAddress::Mode(EffectiveAddressMode::BxSi)),
+            src: Location::Immediate16(123),
+        });
+
+        assert_eq!(mov.to_string(), "mov [bx + si], word 123");
+    }
+
+    #[test]
+    fn test_display_mov_mem_byte() {
+        let mov = Instr::Mov(MoveInstr {
+            dest: Location::Eac(EffectiveAddress::Mode(EffectiveAddressMode::BxSi)),
+            src: Location::Immediate8(123),
+        });
+
+        assert_eq!(mov.to_string(), "mov [bx + si], byte 123");
     }
 }
