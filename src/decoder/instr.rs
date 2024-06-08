@@ -1,6 +1,7 @@
 use std::{fmt::Display, vec::IntoIter};
 
 use crate::decoder::{
+    jump::decode_jump,
     mov::{decode_mov, MoveInstr},
     op::decode_op,
 };
@@ -11,6 +12,8 @@ use super::op::OpInstr;
 pub enum Instr {
     Mov(MoveInstr),
     Op(OpInstr),
+    Je(u8),
+    Jne(u8),
 }
 
 impl Display for Instr {
@@ -18,6 +21,8 @@ impl Display for Instr {
         match self {
             Instr::Mov(mov) => write!(f, "{}", mov),
             Instr::Op(op) => write!(f, "{}", op),
+            Instr::Je(offset) => write!(f, "je {}", offset),
+            Instr::Jne(offset) => write!(f, "jne {}", offset),
         }
     }
 }
@@ -29,6 +34,10 @@ pub fn decode_instr(byte: u8, bytes: &mut IntoIter<u8>, count: i32) -> Instr {
     if let Some(instr) = decode_op(byte, bytes) {
         return instr;
     }
+    if let Some(instr) = decode_jump(byte, bytes) {
+        return instr;
+    }
+
     panic!("Unknown instruction #{}: {:#10b} ", count, byte)
 }
 

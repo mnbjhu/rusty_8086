@@ -4,6 +4,7 @@ use crate::decoder::instr::{decode_instr, Instr};
 
 pub mod common;
 pub mod instr;
+pub mod jump;
 pub mod loc;
 pub mod mov;
 pub mod op;
