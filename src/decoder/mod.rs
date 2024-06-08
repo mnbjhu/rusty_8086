@@ -2,6 +2,7 @@ use std::vec::IntoIter;
 
 use crate::decoder::instr::{decode_instr, Instr};
 
+pub mod common;
 pub mod instr;
 pub mod loc;
 pub mod mov;

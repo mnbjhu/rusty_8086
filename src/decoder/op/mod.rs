@@ -1,6 +1,14 @@
-use std::fmt::Display;
+use std::{fmt::Display, vec::IntoIter};
+
+use crate::decoder::{
+    common::rm_to_reg::{decode_rm_to_from_reg, decode_rm_to_reg},
+    instr::Instr,
+    mov::{AL, AX},
+};
 
 use super::loc::Location;
+
+pub mod acc;
 
 #[derive(Debug, PartialEq)]
 pub enum OpKind {
@@ -14,6 +22,53 @@ pub struct OpInstr {
     pub kind: OpKind,
     pub dest: Location,
     pub src: Location,
+}
+
+pub fn decode_op(byte: u8, bytes: &mut IntoIter<u8>) -> Option<Instr> {
+    match byte {
+        _ if 0b00000000 == byte & 0b11000100 => {
+            let (dest, src) = decode_rm_to_from_reg(byte, bytes);
+            let kind = (byte & 0b00111000) >> 3;
+            Some(Instr::Op(OpInstr {
+                kind: decode_op_kind(kind),
+                dest,
+                src,
+            }))
+        }
+        _ if 0b10000000 == byte & 0b11000100 => {
+            let second = bytes.next().unwrap();
+            let op = (second & 0b00111000) >> 3;
+            let (dest, src) = decode_rm_to_reg(byte, second, bytes);
+            Some(Instr::Op(OpInstr {
+                kind: decode_op_kind(op),
+                dest,
+                src,
+            }))
+        }
+        _ if 0b00111100 == byte & 0b11111110 => {
+            let w = 0b00000001 & byte;
+            if w == 0 {
+                let dest = Location::Reg(AL);
+                let src = Location::Immediate8(bytes.next().unwrap());
+                Some(Instr::Op(OpInstr {
+                    kind: OpKind::Add,
+                    dest,
+                    src,
+                }))
+            } else {
+                let dest = Location::Reg(AX);
+                let low = bytes.next().unwrap();
+                let high = bytes.next().unwrap();
+                let src = Location::Immediate16((high as u16) << 8 | low as u16);
+                Some(Instr::Op(OpInstr {
+                    kind: OpKind::Add,
+                    dest,
+                    src,
+                }))
+            }
+        }
+        _ => None,
+    }
 }
 
 impl Display for OpKind {
@@ -89,9 +144,13 @@ mod test {
 
     #[test]
     fn test_op_imm_with_rm() {
-        let instr = decode_instr(0b10000011, &mut vec![0b11000001, 0b1100].into_iter(), 0);
+        let mut bytes = vec![0b10000011, 0b11000001, 0b1100].into_iter();
+        let asm = decode(&mut bytes);
+
+        assert_eq!(asm.len(), 1);
+
         assert_eq!(
-            instr,
+            asm[0],
             Instr::Op(OpInstr {
                 kind: OpKind::Add,
                 dest: Location::Reg(CX),

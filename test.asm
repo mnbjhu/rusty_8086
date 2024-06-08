@@ -4,4 +4,4 @@
 
 bits 16
 
-add cx, 12
+add ax, 1000
