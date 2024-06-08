@@ -16,3 +16,45 @@ pub fn decode_imm_to_rm(first: u8, second: u8, bytes: &mut IntoIter<u8>) -> (Loc
     };
     (Location::Eac(eac), src)
 }
+
+#[cfg(test)]
+mod test {
+    use crate::decoder::{
+        decode,
+        instr::Instr,
+        loc::Location,
+        mov::{MoveInstr, BL, BX},
+    };
+
+    #[test]
+    fn test_decode_8bit_imm_to_rm() {
+        let mut bytes = vec![0b10110011, 0b1100100].into_iter();
+
+        let asm = decode(&mut bytes);
+
+        assert_eq!(asm.len(), 1);
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                src: Location::Immediate8(0b1100100),
+                dest: Location::Reg(BL)
+            })
+        );
+    }
+
+    #[test]
+    fn test_decode_16bit_imm_to_rm() {
+        let mut bytes = vec![0b10111011, 0b1100100, 0b0].into_iter();
+
+        let asm = decode(&mut bytes);
+
+        assert_eq!(asm.len(), 1);
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                src: Location::Immediate16(0b1100100),
+                dest: Location::Reg(BX)
+            })
+        );
+    }
+}
