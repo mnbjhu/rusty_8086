@@ -1,22 +1,40 @@
-name: Rust
+name: Build & test
+
+permissions:
+  checks: write
+  pull-requests: write
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [master]
   pull_request:
-    branches: [ "master" ]
+    branches: [master]
 
 env:
   CARGO_TERM_COLOR: always
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --verbose
-    - name: Run tests
-      run: cargo test --verbose
+      - uses: actions/checkout@v3
+      - name: Setup ${{ matrix.rust-toolchain }} Rust toolchain with caching
+        uses: brndnmtthws/rust-action@v1
+        with:
+          toolchain: nightly
+      - run: cargo build
+      - run: cargo +nightly test -- --format=junit -Z unstable-options --report-time > test-report.xml
+        env:
+          RUST_BACKTRACE: 1
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy -- -D warnings
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          files: |
+            test-report.xml
