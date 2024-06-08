@@ -37,4 +37,4 @@ jobs:
         if: always()
         with:
           files: |
-            test-report.json
+            *.json
