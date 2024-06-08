@@ -188,4 +188,22 @@ mod test {
             })
         );
     }
+
+    #[test]
+    fn test_eac_display_none() {
+        let eac = EffectiveAddress::Mode(EffectiveAddressMode::Bx);
+        assert_eq!(eac.to_string(), "bx");
+    }
+
+    #[test]
+    fn test_eac_display_byte() {
+        let eac = EffectiveAddress::Byte(EffectiveAddressMode::Bp, 5);
+        assert_eq!(eac.to_string(), "bp + 5");
+    }
+
+    #[test]
+    fn test_eac_display_word() {
+        let eac = EffectiveAddress::Word(EffectiveAddressMode::Bp, 5);
+        assert_eq!(eac.to_string(), "bp + 5");
+    }
 }

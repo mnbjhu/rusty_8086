@@ -25,3 +25,23 @@ impl Display for Location {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use crate::decoder::loc::{eac::EffectiveAddress, eac_mode::EffectiveAddressMode, Location};
+
+    #[test]
+    fn test_location_display() {
+        let reg = Location::Reg("ax");
+        let mem = Location::Mem(1234);
+        let imm16 = Location::Immediate16(1234);
+        let imm8 = Location::Immediate8(12);
+        let eac = Location::Eac(EffectiveAddress::Byte(EffectiveAddressMode::BxSi, 12));
+
+        assert_eq!(reg.to_string(), "ax");
+        assert_eq!(mem.to_string(), "[1234]");
+        assert_eq!(imm16.to_string(), "1234");
+        assert_eq!(imm8.to_string(), "12");
+        assert_eq!(eac.to_string(), "[bx + si + 12]");
+    }
+}
