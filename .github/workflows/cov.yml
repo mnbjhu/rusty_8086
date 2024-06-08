@@ -1,6 +1,10 @@
 name: Coverage
 
-on: [push]
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,3 +22,7 @@ jobs:
         with:
           toolchain: nightly
       - run: cargo tarpaulin --features nightly --out Xml
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          fail_ci_if_error: true
