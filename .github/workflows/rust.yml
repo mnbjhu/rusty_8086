@@ -27,7 +27,7 @@ jobs:
         with:
           toolchain: nightly
       - run: cargo build
-      - run: cargo +nightly test -- --format=json -Z unstable-options --report-time > test-report.json
+      - run: cargo +nightly test -- --format=junit -Z unstable-options --report-time > test-report.xml
         env:
           RUST_BACKTRACE: 1
       - run: cargo fmt --all -- --check
@@ -37,4 +37,4 @@ jobs:
         if: always()
         with:
           files: |
-            *.json
+            test-report.xml
