@@ -70,4 +70,4 @@ jobs:
         with:
           token: ${{ secrets.GIST_TOKEN }}
           gistURL: https://gist.githubusercontent.com/mnbjhu/report_badge
-          file: badge.svg     test-report.xml
+          file: badge.svg
