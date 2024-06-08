@@ -5,6 +5,8 @@ use clap::Parser;
 use crate::cli::disassemble::disassemble;
 use bytes::bytes;
 
+use self::sim::sim;
+
 mod bytes;
 mod disassemble;
 mod sim;
@@ -22,7 +24,7 @@ impl Command {
         match self {
             Command::Disassemble { path } => disassemble(path),
             Command::Bytes { path } => bytes(path),
-            Command::Sim { path } => bytes(path),
+            Command::Sim { path } => sim(path),
         }
     }
 }
