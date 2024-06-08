@@ -99,10 +99,7 @@ impl SimState {
 }
 
 pub fn is_byte(reg: &str) -> bool {
-    match reg {
-        "al" | "ah" | "bl" | "bh" | "cl" | "ch" | "dl" | "dh" => true,
-        _ => false,
-    }
+    matches!(reg, "al" | "ah" | "bl" | "bh" | "cl" | "ch" | "dl" | "dh")
 }
 
 impl Display for SimState {
