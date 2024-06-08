@@ -22,7 +22,5 @@ jobs:
         with:
           toolchain: nightly
       - run: cargo tarpaulin --out Xml
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v3
-        with:
-          fail_ci_if_error: true
+      - name: Coveralls GitHub Action
+        uses: coverallsapp/github-action@v2.3.0
