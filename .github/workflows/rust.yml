@@ -13,16 +13,12 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Setup ${{ matrix.rust-toolchain }} Rust toolchain with caching
+      - name: Setup Rust toolchain with caching
         uses: brndnmtthws/rust-action@v1
         with:
           toolchain: nightly
