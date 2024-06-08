@@ -1,6 +1,14 @@
-use std::fmt::Display;
+use std::{fmt::Display, vec::IntoIter};
+
+use crate::decoder::{
+    common::rm_to_reg::{decode_rm_to_from_reg, decode_rm_to_reg},
+    instr::Instr,
+    mov::{AL, AX},
+};
 
 use super::loc::Location;
+
+pub mod acc;
 
 #[derive(Debug, PartialEq)]
 pub enum OpKind {
@@ -14,6 +22,56 @@ pub struct OpInstr {
     pub kind: OpKind,
     pub dest: Location,
     pub src: Location,
+}
+
+pub fn decode_op(byte: u8, bytes: &mut IntoIter<u8>) -> Option<Instr> {
+    match byte {
+        // Register/Memory with Register to Either
+        _ if 0b00000000 == byte & 0b11000100 => {
+            let (dest, src) = decode_rm_to_from_reg(byte, bytes);
+            let kind = (byte & 0b00111000) >> 3;
+            Some(Instr::Op(OpInstr {
+                kind: decode_op_kind(kind),
+                dest,
+                src,
+            }))
+        }
+        // Immediate to Register/Memory
+        _ if 0b10000000 == byte & 0b11000100 => {
+            let second = bytes.next().unwrap();
+            let op = (second & 0b00111000) >> 3;
+            let (dest, src) = decode_rm_to_reg(byte, second, bytes);
+            Some(Instr::Op(OpInstr {
+                kind: decode_op_kind(op),
+                dest,
+                src,
+            }))
+        }
+        // Immediate to Accumulator
+        _ if 0b00000100 == byte & 0b11000110 => {
+            let w = 0b00000001 & byte;
+            if w == 0 {
+                let dest = Location::Reg(AL);
+                let src = Location::Immediate8(bytes.next().unwrap());
+                Some(Instr::Op(OpInstr {
+                    kind: OpKind::Add,
+                    dest,
+                    src,
+                }))
+            } else {
+                let dest = Location::Reg(AX);
+                let low = bytes.next().unwrap();
+                let high = bytes.next().unwrap();
+                let src = Location::Immediate16((high as u16) << 8 | low as u16);
+                Some(Instr::Op(OpInstr {
+                    kind: OpKind::Add,
+                    dest,
+                    src,
+                }))
+            }
+        }
+        _ => None,
+    }
 }
 
 impl Display for OpKind {
@@ -37,7 +95,15 @@ pub fn decode_op_kind(op_part: u8) -> OpKind {
 
 impl Display for OpInstr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}, {}", self.kind, self.dest, self.src)
+        match (&self.dest, &self.src) {
+            (Location::Eac(_), Location::Immediate8(_)) => {
+                write!(f, "{} {}, byte {}", self.kind, self.dest, self.src)
+            }
+            (Location::Eac(_), Location::Immediate16(_)) => {
+                write!(f, "{} {}, word {}", self.kind, self.dest, self.src)
+            }
+            _ => write!(f, "{} {}, {}", self.kind, self.dest, self.src),
+        }
     }
 }
 
@@ -47,7 +113,7 @@ mod test {
         decode,
         instr::Instr,
         loc::Location,
-        mov::{AX, BX},
+        mov::{AX, BX, CX, SI},
         op::{OpInstr, OpKind},
     };
 
@@ -83,6 +149,40 @@ mod test {
                 kind: OpKind::Cmp,
                 dest: Location::Reg(AX),
                 src: Location::Reg(BX),
+            })
+        );
+    }
+
+    #[test]
+    fn test_op_imm_with_rm() {
+        let mut bytes = vec![0b10000011, 0b11000001, 0b1100].into_iter();
+        let asm = decode(&mut bytes);
+
+        assert_eq!(asm.len(), 1);
+
+        assert_eq!(
+            asm[0],
+            Instr::Op(OpInstr {
+                kind: OpKind::Add,
+                dest: Location::Reg(CX),
+                src: Location::Immediate8(12),
+            })
+        );
+    }
+
+    #[test]
+    fn test_add_si_imm() {
+        let mut bytes = vec![0b10000011, 0b11000110, 0b10].into_iter();
+        let asm = decode(&mut bytes);
+
+        assert_eq!(asm.len(), 1);
+
+        assert_eq!(
+            asm[0],
+            Instr::Op(OpInstr {
+                kind: OpKind::Add,
+                dest: Location::Reg(SI),
+                src: Location::Immediate8(2),
             })
         );
     }

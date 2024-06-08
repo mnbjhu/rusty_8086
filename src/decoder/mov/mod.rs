@@ -1,7 +1,16 @@
 use core::panic;
 use std::{fmt::Display, vec::IntoIter};
 
-use super::loc::{eac::decode_eac, Location};
+use crate::decoder::{
+    common::{
+        imm_to_reg::decode_imm_to_reg, imm_to_rm::decode_imm_to_rm,
+        rm_to_reg::decode_rm_to_from_reg,
+    },
+    instr::Instr,
+    mov::acc::{decode_acc_to_mem, decode_mem_to_acc},
+};
+
+use super::loc::Location;
 
 pub mod acc;
 pub mod immediate;
@@ -30,33 +39,24 @@ pub const CH: &str = "ch";
 pub const DH: &str = "dh";
 pub const BH: &str = "bh";
 
-pub fn decode_rm_to_from_reg(first: u8, bytes: &mut IntoIter<u8>) -> (Location, Location) {
-    let second = bytes.next().unwrap();
-    let d = first & 0b00000010;
-    let w = first & 0b00000001;
-    let reg = (second & 0b000111000) >> 3;
-    let reg = decode_reg(w, reg);
-    let mod_ = second & 0b11000000;
-    let rm = if mod_ != 0b11000000 {
-        if (second & 0b00000111) == 0b110 && mod_ == 0 {
-            if w == 0 {
-                Location::Mem(bytes.next().unwrap() as u16)
-            } else {
-                let low = bytes.next().unwrap();
-                let high = bytes.next().unwrap();
-                Location::Mem((high as u16) << 8 | low as u16)
-            }
-        } else {
-            Location::Eac(decode_eac(second, bytes))
+pub fn decode_mov(byte: u8, bytes: &mut IntoIter<u8>) -> Option<Instr> {
+    match byte {
+        _ if 0b10001000 == byte & 0b11111100 => {
+            let (dest, src) = decode_rm_to_from_reg(byte, bytes);
+            Some(Instr::Mov(MoveInstr { dest, src }))
         }
-    } else {
-        Location::Reg(decode_reg(w, second & 0b000000111))
-    };
-
-    if d == 0 {
-        (rm, Location::Reg(reg))
-    } else {
-        (Location::Reg(reg), rm)
+        _ if 0b10110000 == byte & 0b11110000 => {
+            let (dest, src) = decode_imm_to_reg(byte, bytes);
+            Some(Instr::Mov(MoveInstr { dest, src }))
+        }
+        _ if 0b11000110 == byte & 0b11111110 => {
+            let second = bytes.next().unwrap();
+            let (dest, src) = decode_imm_to_rm(byte, second, bytes);
+            Some(Instr::Mov(MoveInstr { dest, src }))
+        }
+        _ if 0b10100000 == byte & 0b11111110 => Some(Instr::Mov(decode_mem_to_acc(byte, bytes))),
+        _ if 0b10100010 == byte & 0b11111110 => Some(Instr::Mov(decode_acc_to_mem(byte, bytes))),
+        _ => None,
     }
 }
 
