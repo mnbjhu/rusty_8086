@@ -56,7 +56,7 @@ pub fn decode_rm_to_reg(first: u8, second: u8, bytes: &mut IntoIter<u8>) -> (Loc
         Location::Reg(decode_reg(w, second & 0b000000111))
     };
 
-    let imm = if sw == 0b01 {
+    let imm = if sw == 01 {
         let low = bytes.next().unwrap();
         let high = bytes.next().unwrap();
         Location::Immediate16((high as u16) << 8 | low as u16)

@@ -26,6 +26,7 @@ pub struct OpInstr {
 
 pub fn decode_op(byte: u8, bytes: &mut IntoIter<u8>) -> Option<Instr> {
     match byte {
+        // Register/Memory with Register to Either
         _ if 0b00000000 == byte & 0b11000100 => {
             let (dest, src) = decode_rm_to_from_reg(byte, bytes);
             let kind = (byte & 0b00111000) >> 3;
@@ -35,6 +36,7 @@ pub fn decode_op(byte: u8, bytes: &mut IntoIter<u8>) -> Option<Instr> {
                 src,
             }))
         }
+        // Immediate to Register/Memory
         _ if 0b10000000 == byte & 0b11000100 => {
             let second = bytes.next().unwrap();
             let op = (second & 0b00111000) >> 3;
@@ -45,7 +47,8 @@ pub fn decode_op(byte: u8, bytes: &mut IntoIter<u8>) -> Option<Instr> {
                 src,
             }))
         }
-        _ if 0b00111100 == byte & 0b11111110 => {
+        // Immediate to Accumulator
+        _ if 0b00000100 == byte & 0b11000110 => {
             let w = 0b00000001 & byte;
             if w == 0 {
                 let dest = Location::Reg(AL);
@@ -92,7 +95,15 @@ pub fn decode_op_kind(op_part: u8) -> OpKind {
 
 impl Display for OpInstr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}, {}", self.kind, self.dest, self.src)
+        match (&self.dest, &self.src) {
+            (Location::Eac(_), Location::Immediate8(_)) => {
+                write!(f, "{} {}, byte {}", self.kind, self.dest, self.src)
+            }
+            (Location::Eac(_), Location::Immediate16(_)) => {
+                write!(f, "{} {}, word {}", self.kind, self.dest, self.src)
+            }
+            _ => write!(f, "{} {}, {}", self.kind, self.dest, self.src),
+        }
     }
 }
 
@@ -100,9 +111,9 @@ impl Display for OpInstr {
 mod test {
     use crate::decoder::{
         decode,
-        instr::{decode_instr, Instr},
+        instr::Instr,
         loc::Location,
-        mov::{AX, BX, CX},
+        mov::{AX, BX, CX, SI},
         op::{OpInstr, OpKind},
     };
 
@@ -155,6 +166,23 @@ mod test {
                 kind: OpKind::Add,
                 dest: Location::Reg(CX),
                 src: Location::Immediate8(12),
+            })
+        );
+    }
+
+    #[test]
+    fn test_add_si_imm() {
+        let mut bytes = vec![0b10000011, 0b11000110, 0b10].into_iter();
+        let asm = decode(&mut bytes);
+
+        assert_eq!(asm.len(), 1);
+
+        assert_eq!(
+            asm[0],
+            Instr::Op(OpInstr {
+                kind: OpKind::Add,
+                dest: Location::Reg(SI),
+                src: Location::Immediate8(2),
             })
         );
     }
