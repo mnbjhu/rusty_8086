@@ -6,6 +6,7 @@ use crate::cli::Command;
 mod cli;
 mod decoder;
 
+#[cfg(not(tarpaulin_include))]
 fn main() {
     Command::parse().run()
 }
