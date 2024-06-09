@@ -2,15 +2,17 @@ use std::fmt::Display;
 
 use crate::decoder::{instr::Instr, loc::Location, mov::MoveInstr};
 
+use self::flags::Flags;
+
+pub mod flags;
+
+#[derive(Default)]
 pub struct SimState {
     registers: [u16; 8],
+    flags: Flags,
 }
 
 impl SimState {
-    pub fn new() -> Self {
-        Self { registers: [0; 8] }
-    }
-
     fn get_register_16(&self, name: &str) -> u16 {
         match name {
             "ax" => self.registers[0],
@@ -72,6 +74,7 @@ impl SimState {
     pub fn execute(&mut self, instr: &Instr) {
         match instr {
             Instr::Mov(mov) => self.execute_mov(mov),
+            Instr::Op(op) => op.execute(self),
             _ => unimplemented!(),
         }
     }
@@ -121,7 +124,7 @@ mod test {
 
     #[test]
     fn test_register_16() {
-        let mut state = SimState::new();
+        let mut state = SimState::default();
         state.set_register_16("ax", 0x1234);
         state.set_register_16("bx", 0x5678);
         state.set_register_16("cx", 0x9ABC);
@@ -144,7 +147,7 @@ mod test {
     #[test]
     fn test_mov_imm_to_reg_lower() {
         let mut bytes = vec![0b10110011, 0b1100100].into_iter();
-        let mut state = SimState::new();
+        let mut state = SimState::default();
         decode(&mut bytes).into_iter().for_each(|instr| {
             state.execute(&instr);
         });
@@ -154,7 +157,7 @@ mod test {
     #[test]
     fn test_mov_imm_to_reg_higher() {
         let mut bytes = vec![0b10110111, 0b1100100].into_iter();
-        let mut state = SimState::new();
+        let mut state = SimState::default();
         decode(&mut bytes).into_iter().for_each(|instr| {
             state.execute(&instr);
         });
@@ -164,7 +167,7 @@ mod test {
     #[test]
     fn test_mov_imm_to_reg_16bit() {
         let mut bytes = vec![0b10111011, 0b1100100, 0b0].into_iter();
-        let mut state = SimState::new();
+        let mut state = SimState::default();
         decode(&mut bytes).into_iter().for_each(|instr| {
             state.execute(&instr);
         });
@@ -174,7 +177,7 @@ mod test {
     #[test]
     fn test_mov_reg_high_to_reg_low() {
         let mut bytes = vec![0b10001000, 0b11010101].into_iter();
-        let mut state = SimState::new();
+        let mut state = SimState::default();
         state.set_register_8("dl", 100);
         decode(&mut bytes).into_iter().for_each(|instr| {
             state.execute(&instr);
@@ -185,7 +188,7 @@ mod test {
     #[test]
     fn test_mov_reg_low_to_reg_high() {
         let mut bytes = vec![0b10001000, 0b11101010].into_iter();
-        let mut state = SimState::new();
+        let mut state = SimState::default();
         state.set_register_8("ch", 100);
         decode(&mut bytes).into_iter().for_each(|instr| {
             state.execute(&instr);
@@ -196,7 +199,7 @@ mod test {
     #[test]
     fn mov_reg_to_reg() {
         let mut bytes = vec![0b10001001, 0b11000001].into_iter();
-        let mut state = SimState::new();
+        let mut state = SimState::default();
         state.set_register_16("ax", 1234);
         decode(&mut bytes).into_iter().for_each(|instr| {
             state.execute(&instr);
@@ -210,6 +213,7 @@ mod test {
             registers: [
                 0x1234, 0x5678, 0x9ABC, 0xDEF0, 0x1357, 0x2468, 0xACE0, 0xBEEF,
             ],
+            ..SimState::default()
         };
         let expected =
             "ax: 1234\nbx: 5678\ncx: 9abc\ndx: def0\nsp: beef\nbp: ace0\nsi: 1357\ndi: 2468\n";
