@@ -68,4 +68,25 @@ mod test {
 
         assert_eq!(op.to_string(), "add ax, bx");
     }
+
+    #[test]
+    fn test_je_display() {
+        let je = Instr::Je(0x12);
+
+        assert_eq!(je.to_string(), "je 18");
+    }
+
+    #[test]
+    fn test_jne_display() {
+        let jne = Instr::Jne(0x12);
+
+        assert_eq!(jne.to_string(), "jne 18");
+    }
+
+    #[test]
+    #[should_panic(expected = "Unknown instruction: 0b11111111")]
+    fn test_invalid_input() {
+        let mut state = DecoderState::new(vec![0b11111111]);
+        decode_instr(&mut state);
+    }
 }

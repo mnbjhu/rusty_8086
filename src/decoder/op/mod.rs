@@ -194,6 +194,38 @@ mod test {
     }
 
     #[test]
+    fn test_add_mem_to_reg() {
+        let asm = decode(vec![0b11, 0b110110, 0b1010, 0b0]);
+
+        assert_eq!(asm.len(), 1);
+
+        assert_eq!(
+            asm[0],
+            Instr::Op(OpInstr {
+                kind: OpKind::Add,
+                dest: Location::Reg(SI),
+                src: Location::Mem(10),
+            })
+        );
+    }
+
+    #[test]
+    fn test_add_imm_to_mem() {
+        let asm = decode(vec![0b10000001, 0b110, 0b1010, 0b0, 0b11101000, 0b11]);
+
+        assert_eq!(asm.len(), 1);
+
+        assert_eq!(
+            asm[0],
+            Instr::Op(OpInstr {
+                kind: OpKind::Add,
+                dest: Location::Mem(10),
+                src: Location::Immediate16(1000),
+            })
+        );
+    }
+
+    #[test]
     fn test_display_op_kind() {
         assert_eq!(format!("{}", OpKind::Add), "add");
         assert_eq!(format!("{}", OpKind::Sub), "sub");
