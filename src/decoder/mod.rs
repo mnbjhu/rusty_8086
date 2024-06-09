@@ -1,6 +1,6 @@
-use std::vec::IntoIter;
-
 use crate::decoder::instr::{decode_instr, Instr};
+
+use self::state::DecoderState;
 
 pub mod common;
 pub mod instr;
@@ -8,13 +8,13 @@ pub mod jump;
 pub mod loc;
 pub mod mov;
 pub mod op;
+pub mod state;
 
-pub fn decode(bytes: &mut IntoIter<u8>) -> Vec<Instr> {
+pub fn decode(bytes: Vec<u8>) -> Vec<Instr> {
     let mut found = vec![];
-    let mut count = 0;
-    while let Some(byte) = bytes.next() {
-        found.push(decode_instr(byte, bytes, count));
-        count += 1;
+    let mut state = DecoderState::new(bytes);
+    while state.next() {
+        found.push(decode_instr(&mut state));
     }
     found
 }

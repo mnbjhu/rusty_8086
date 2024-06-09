@@ -1,4 +1,4 @@
-use std::{fmt::Display, vec::IntoIter};
+use std::fmt::Display;
 
 use crate::decoder::{
     common::rm_to_reg::{decode_rm_to_from_reg, decode_rm_to_reg},
@@ -6,7 +6,7 @@ use crate::decoder::{
     mov::{AL, AX},
 };
 
-use super::loc::Location;
+use super::{loc::Location, state::DecoderState};
 
 pub mod acc;
 
@@ -24,11 +24,12 @@ pub struct OpInstr {
     pub src: Location,
 }
 
-pub fn decode_op(byte: u8, bytes: &mut IntoIter<u8>) -> Option<Instr> {
+pub fn decode_op(state: &mut DecoderState) -> Option<Instr> {
+    let byte = state.get_byte(0);
     match byte {
         // Register/Memory with Register to Either
         _ if 0b00000000 == byte & 0b11000100 => {
-            let (dest, src) = decode_rm_to_from_reg(byte, bytes);
+            let (dest, src) = decode_rm_to_from_reg(state);
             let kind = (byte & 0b00111000) >> 3;
             Some(Instr::Op(OpInstr {
                 kind: decode_op_kind(kind),
@@ -38,9 +39,9 @@ pub fn decode_op(byte: u8, bytes: &mut IntoIter<u8>) -> Option<Instr> {
         }
         // Immediate to Register/Memory
         _ if 0b10000000 == byte & 0b11000100 => {
-            let second = bytes.next().unwrap();
+            let second = state.get_byte(1);
             let op = (second & 0b00111000) >> 3;
-            let (dest, src) = decode_rm_to_reg(byte, second, bytes);
+            let (dest, src) = decode_rm_to_reg(state);
             Some(Instr::Op(OpInstr {
                 kind: decode_op_kind(op),
                 dest,
@@ -48,29 +49,36 @@ pub fn decode_op(byte: u8, bytes: &mut IntoIter<u8>) -> Option<Instr> {
             }))
         }
         // Immediate to Accumulator
-        _ if 0b00000100 == byte & 0b11000110 => {
-            let w = 0b00000001 & byte;
-            if w == 0 {
-                let dest = Location::Reg(AL);
-                let src = Location::Immediate8(bytes.next().unwrap());
-                Some(Instr::Op(OpInstr {
-                    kind: OpKind::Add,
-                    dest,
-                    src,
-                }))
-            } else {
-                let dest = Location::Reg(AX);
-                let low = bytes.next().unwrap();
-                let high = bytes.next().unwrap();
-                let src = Location::Immediate16((high as u16) << 8 | low as u16);
-                Some(Instr::Op(OpInstr {
-                    kind: OpKind::Add,
-                    dest,
-                    src,
-                }))
-            }
-        }
+        _ if 0b00000100 == byte & 0b11000110 => decode_imm_to_acc(state),
         _ => None,
+    }
+}
+
+fn decode_imm_to_acc(state: &mut DecoderState) -> Option<Instr> {
+    let byte = state.get_byte(0);
+    state.add_len(1);
+    let w = 0b00000001 & byte;
+    if w == 0 {
+        let dest = Location::Reg(AL);
+        let data = state.get_byte(1);
+        state.add_len(1);
+        let src = Location::Immediate8(data);
+        Some(Instr::Op(OpInstr {
+            kind: OpKind::Add,
+            dest,
+            src,
+        }))
+    } else {
+        let dest = Location::Reg(AX);
+        let low = state.get_byte(1);
+        let high = state.get_byte(2);
+        state.add_len(2);
+        let src = Location::Immediate16((high as u16) << 8 | low as u16);
+        Some(Instr::Op(OpInstr {
+            kind: OpKind::Add,
+            dest,
+            src,
+        }))
     }
 }
 
@@ -119,9 +127,9 @@ mod test {
 
     #[test]
     fn test_op_rm_and_reg_to_either() {
-        let mut bytes =
-            vec![0b1, 0b11011000, 0b101001, 0b11011000, 0b111001, 0b11011000].into_iter();
-        let asm = decode(&mut bytes);
+        let asm = decode(vec![
+            0b1, 0b11011000, 0b101001, 0b11011000, 0b111001, 0b11011000,
+        ]);
 
         assert_eq!(asm.len(), 3);
 
@@ -155,8 +163,7 @@ mod test {
 
     #[test]
     fn test_op_imm_with_rm() {
-        let mut bytes = vec![0b10000011, 0b11000001, 0b1100].into_iter();
-        let asm = decode(&mut bytes);
+        let asm = decode(vec![0b10000011, 0b11000001, 0b1100]);
 
         assert_eq!(asm.len(), 1);
 
@@ -172,8 +179,7 @@ mod test {
 
     #[test]
     fn test_add_si_imm() {
-        let mut bytes = vec![0b10000011, 0b11000110, 0b10].into_iter();
-        let asm = decode(&mut bytes);
+        let asm = decode(vec![0b10000011, 0b11000110, 0b10]);
 
         assert_eq!(asm.len(), 1);
 
@@ -183,6 +189,38 @@ mod test {
                 kind: OpKind::Add,
                 dest: Location::Reg(SI),
                 src: Location::Immediate8(2),
+            })
+        );
+    }
+
+    #[test]
+    fn test_add_mem_to_reg() {
+        let asm = decode(vec![0b11, 0b110110, 0b1010, 0b0]);
+
+        assert_eq!(asm.len(), 1);
+
+        assert_eq!(
+            asm[0],
+            Instr::Op(OpInstr {
+                kind: OpKind::Add,
+                dest: Location::Reg(SI),
+                src: Location::Mem(10),
+            })
+        );
+    }
+
+    #[test]
+    fn test_add_imm_to_mem() {
+        let asm = decode(vec![0b10000001, 0b110, 0b1010, 0b0, 0b11101000, 0b11]);
+
+        assert_eq!(asm.len(), 1);
+
+        assert_eq!(
+            asm[0],
+            Instr::Op(OpInstr {
+                kind: OpKind::Add,
+                dest: Location::Mem(10),
+                src: Location::Immediate16(1000),
             })
         );
     }

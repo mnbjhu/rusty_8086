@@ -1,20 +1,29 @@
-use std::vec::IntoIter;
+use crate::decoder::{loc::Location, state::DecoderState};
 
-use crate::decoder::loc::{eac::decode_eac, Location};
+use super::rm_to_reg::decode_rm;
 
-pub fn decode_imm_to_rm(first: u8, second: u8, bytes: &mut IntoIter<u8>) -> (Location, Location) {
-    let w = first & 0b00000001;
-    let eac = decode_eac(second, bytes);
-    let src = if w == 0 {
-        let second = bytes.next().unwrap();
-        Location::Immediate8(second)
+pub fn decode_imm_to_rm(state: &mut DecoderState) -> (Location, Location) {
+    state.add_len(2);
+    let dest = decode_rm(state);
+    let src = decode_imm(state);
+    (dest, src)
+}
+
+fn decode_imm(state: &mut DecoderState) -> Location {
+    let w = state.get_byte(0) & 0b00000001;
+    let len = state.get_instr_len();
+    if w == 0 {
+        let data = state.get_byte(len);
+        state.add_len(1);
+        Location::Immediate8(data)
     } else {
-        let second = bytes.next().unwrap();
-        let third = bytes.next().unwrap();
-        let second = (third as u16) << 8 | second as u16;
-        Location::Immediate16(second)
-    };
-    (Location::Eac(eac), src)
+        let low = state.get_byte(len);
+        let high = state.get_byte(len + 1);
+        state.add_len(2);
+
+        let data = (high as u16) << 8 | low as u16;
+        Location::Immediate16(data)
+    }
 }
 
 #[cfg(test)]
@@ -28,9 +37,7 @@ mod test {
 
     #[test]
     fn test_decode_8bit_imm_to_rm() {
-        let mut bytes = vec![0b10110011, 0b1100100].into_iter();
-
-        let asm = decode(&mut bytes);
+        let asm = decode(vec![0b10110011, 0b1100100]);
 
         assert_eq!(asm.len(), 1);
         assert_eq!(
@@ -44,9 +51,7 @@ mod test {
 
     #[test]
     fn test_decode_16bit_imm_to_rm() {
-        let mut bytes = vec![0b10111011, 0b1100100, 0b0].into_iter();
-
-        let asm = decode(&mut bytes);
+        let asm = decode(vec![0b10111011, 0b1100100, 0b0]);
 
         assert_eq!(asm.len(), 1);
         assert_eq!(
@@ -54,6 +59,34 @@ mod test {
             Instr::Mov(MoveInstr {
                 src: Location::Immediate16(0b1100100),
                 dest: Location::Reg(BX)
+            })
+        );
+    }
+
+    #[test]
+    fn test_decode_imm_to_mem_byte() {
+        let asm = decode(vec![0b11000110, 0b110, 0b11, 0b0, 0b100]);
+
+        assert_eq!(asm.len(), 1);
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                src: Location::Immediate8(4),
+                dest: Location::Mem(3)
+            })
+        );
+    }
+
+    #[test]
+    fn test_decode_imm_to_mem_word() {
+        let asm = decode(vec![0b11000111, 0b110, 0b11, 0b0, 0b100, 0b0]);
+
+        assert_eq!(asm.len(), 1);
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                src: Location::Immediate16(4),
+                dest: Location::Mem(3)
             })
         );
     }

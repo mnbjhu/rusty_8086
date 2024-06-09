@@ -10,8 +10,7 @@ mod test {
 
     #[test]
     fn test_add_acc_8bit() {
-        let mut bytes = vec![0b100, 0b1100].into_iter();
-        let asm = decode(&mut bytes);
+        let asm = decode(vec![0b100, 0b1100]);
 
         assert_eq!(asm.len(), 1);
 

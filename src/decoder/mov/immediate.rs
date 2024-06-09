@@ -9,8 +9,7 @@ mod test {
 
     #[test]
     fn test_8bit_immediate_to_reg() {
-        let mut bytes = vec![0b10110001, 0b1100, 0b10110101, 0b11110100].into_iter();
-        let asm = decode(&mut bytes);
+        let asm = decode(vec![0b10110001, 0b1100, 0b10110101, 0b11110100]);
 
         assert_eq!(asm.len(), 2);
         assert_eq!(
@@ -31,13 +30,10 @@ mod test {
 
     #[test]
     fn test_16bit_immediate_to_reg() {
-        let mut bytes = vec![
+        let asm = decode(vec![
             0b10111001, 0b1100, 0b0, 0b10111001, 0b11110100, 0b11111111, 0b10111010, 0b1101100,
             0b1111, 0b10111010, 0b10010100, 0b11110000,
-        ]
-        .into_iter();
-
-        let asm = decode(&mut bytes);
+        ]);
 
         assert_eq!(asm.len(), 4);
 

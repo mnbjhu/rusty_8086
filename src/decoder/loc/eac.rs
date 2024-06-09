@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::decoder::state::DecoderState;
+
 use super::eac_mode::{decode_eac_mode, EffectiveAddressMode};
 
 #[derive(Debug, PartialEq)]
@@ -31,17 +33,21 @@ impl Display for EffectiveAddress {
     }
 }
 
-pub fn decode_eac(first: u8, bytes: &mut std::vec::IntoIter<u8>) -> EffectiveAddress {
+pub fn decode_eac(state: &mut DecoderState) -> EffectiveAddress {
+    let first = state.get_byte(1); // TODO: Check this is correct
     let mode = decode_eac_mode(first & 0b111);
     match first >> 6 {
         0b00 => EffectiveAddress::Mode(mode),
         0b01 => {
-            let offset = bytes.next().unwrap() as i8;
+            let offset = state.get_byte(state.get_instr_len()) as i8;
+            state.add_len(1);
             EffectiveAddress::Byte(mode, offset)
         }
         0b10 => {
-            let low = bytes.next().unwrap() as u16;
-            let high = bytes.next().unwrap() as u16;
+            let instr_len = state.get_instr_len();
+            let low = state.get_byte(instr_len) as u16;
+            let high = state.get_byte(instr_len + 1) as u16;
+            state.add_len(2);
             let offset = (high << 8 | low) as i16;
             EffectiveAddress::Word(mode, offset)
         }
@@ -60,12 +66,9 @@ mod test {
 
     #[test]
     fn test_source_addr_calulation() {
-        let mut bytes = vec![
+        let asm = decode(vec![
             0b10001010, 0b0, 0b10001011, 0b11011, 0b10001011, 0b1010110, 0b0,
-        ]
-        .into_iter();
-
-        let asm = decode(&mut bytes);
+        ]);
 
         assert_eq!(asm.len(), 3);
 
@@ -96,8 +99,7 @@ mod test {
 
     #[test]
     fn test_source_addr_calulation_with_8bit_offset() {
-        let mut bytes = vec![0b10001010, 0b1100000, 0b100].into_iter();
-        let asm = decode(&mut bytes);
+        let asm = decode(vec![0b10001010, 0b1100000, 0b100]);
 
         assert_eq!(asm.len(), 1);
 
@@ -112,8 +114,7 @@ mod test {
 
     #[test]
     fn test_source_addr_calulation_with_16bit_offset() {
-        let mut bytes = vec![0b10001010, 0b10000000, 0b10000111, 0b10011].into_iter();
-        let asm = decode(&mut bytes);
+        let asm = decode(vec![0b10001010, 0b10000000, 0b10000111, 0b10011]);
 
         assert_eq!(asm.len(), 1);
 
@@ -128,11 +129,9 @@ mod test {
 
     #[test]
     fn test_dest_add_calculation() {
-        let mut bytes = vec![
+        let asm = decode(vec![
             0b10001001, 0b1001, 0b10001000, 0b1010, 0b10001000, 0b1101110, 0b0,
-        ]
-        .into_iter();
-        let asm = decode(&mut bytes);
+        ]);
 
         assert_eq!(asm.len(), 3);
 
@@ -163,12 +162,9 @@ mod test {
 
     #[test]
     fn test_direct_access() {
-        let mut bytes = vec![
+        let asm = decode(vec![
             0b10001011, 0b101110, 0b101, 0b0, 0b10001011, 0b11110, 0b10000010, 0b1101,
-        ]
-        .into_iter();
-
-        let asm = decode(&mut bytes);
+        ]);
 
         assert_eq!(asm.len(), 2);
 

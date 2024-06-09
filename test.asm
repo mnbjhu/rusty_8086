@@ -1,3 +1,3 @@
 bits 16
 
-add ax, 1000
+add [10], word 1000

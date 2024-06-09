@@ -1,4 +1,4 @@
-use std::{fmt::Display, vec::IntoIter};
+use std::fmt::Display;
 
 use crate::decoder::{
     jump::decode_jump,
@@ -6,7 +6,7 @@ use crate::decoder::{
     op::decode_op,
 };
 
-use super::op::OpInstr;
+use super::{op::OpInstr, state::DecoderState};
 
 #[derive(Debug, PartialEq)]
 pub enum Instr {
@@ -27,18 +27,15 @@ impl Display for Instr {
     }
 }
 
-pub fn decode_instr(byte: u8, bytes: &mut IntoIter<u8>, count: i32) -> Instr {
-    if let Some(instr) = decode_mov(byte, bytes) {
-        return instr;
+pub fn decode_instr(state: &mut DecoderState) -> Instr {
+    let instr = decode_mov(state)
+        .or_else(|| decode_op(state))
+        .or_else(|| decode_jump(state));
+    if let Some(instr) = instr {
+        instr
+    } else {
+        panic!("Unknown instruction: {:#10b} ", state.get_byte(0))
     }
-    if let Some(instr) = decode_op(byte, bytes) {
-        return instr;
-    }
-    if let Some(instr) = decode_jump(byte, bytes) {
-        return instr;
-    }
-
-    panic!("Unknown instruction #{}: {:#10b} ", count, byte)
 }
 
 #[cfg(test)]
@@ -70,5 +67,26 @@ mod test {
         });
 
         assert_eq!(op.to_string(), "add ax, bx");
+    }
+
+    #[test]
+    fn test_je_display() {
+        let je = Instr::Je(0x12);
+
+        assert_eq!(je.to_string(), "je 18");
+    }
+
+    #[test]
+    fn test_jne_display() {
+        let jne = Instr::Jne(0x12);
+
+        assert_eq!(jne.to_string(), "jne 18");
+    }
+
+    #[test]
+    #[should_panic(expected = "Unknown instruction: 0b11111111")]
+    fn test_invalid_input() {
+        let mut state = DecoderState::new(vec![0b11111111]);
+        decode_instr(&mut state);
     }
 }
