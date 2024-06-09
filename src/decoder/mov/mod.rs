@@ -103,13 +103,16 @@ impl Display for MoveInstr {
 
 #[cfg(test)]
 mod test {
-    use crate::decoder::{
-        common::rm_to_reg::decode_rm_to_from_reg,
-        decode,
-        instr::Instr,
-        loc::{eac::EffectiveAddress, eac_mode::EffectiveAddressMode},
-        mov::{Location, MoveInstr, AH, AL, AX, BP, BX, CH, CL, CX, DI, DX, SI, SP},
-        state::DecoderState,
+    use crate::{
+        decoder::{
+            common::rm_to_reg::decode_rm_to_from_reg,
+            decode,
+            instr::Instr,
+            loc::{eac::EffectiveAddress, eac_mode::EffectiveAddressMode},
+            mov::{Location, MoveInstr, AH, AL, AX, BP, BX, CH, CL, CX, DI, DX, SI, SP},
+            state::DecoderState,
+        },
+        sim::SimState,
     };
 
     #[test]
@@ -239,5 +242,25 @@ mod test {
         });
 
         assert_eq!(mov.to_string(), "mov [bx + si], byte 123");
+    }
+
+    #[test]
+    fn test_mem_mov() {
+        let mut state = SimState::new(vec![
+            0b11000111, 0b110, 0b11101000, 0b11, 0b1, 0b0, 0b11000111, 0b110, 0b11101010, 0b11,
+            0b10, 0b0, 0b11000111, 0b110, 0b11101100, 0b11, 0b11, 0b0, 0b11000111, 0b110,
+            0b11101110, 0b11, 0b100, 0b0, 0b10111011, 0b11101000, 0b11, 0b11000111, 0b1000111,
+            0b100, 0b1010, 0b0, 0b10001011, 0b11110, 0b11101000, 0b11, 0b10001011, 0b1110,
+            0b11101010, 0b11, 0b10001011, 0b10110, 0b11101100, 0b11, 0b10001011, 0b101110,
+            0b11101110, 0b11,
+        ]);
+
+        state.run();
+
+        assert_eq!(state.get_register_16("bx"), 1);
+        assert_eq!(state.get_register_16("cx"), 2);
+        assert_eq!(state.get_register_16("dx"), 10);
+        assert_eq!(state.get_register_16("bp"), 1);
+        assert_eq!(state.get_register_16("ip"), 1);
     }
 }

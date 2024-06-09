@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::sim::is_byte;
+
 use self::eac::EffectiveAddress;
 
 pub mod eac;
@@ -22,6 +24,29 @@ impl Display for Location {
             Location::Immediate16(val) => write!(f, "{}", val),
             Location::Immediate8(val) => write!(f, "{}", val),
             Location::Eac(eac) => write!(f, "[{}]", eac),
+        }
+    }
+}
+
+pub enum Size {
+    Byte,
+    Word,
+}
+
+impl Location {
+    pub fn implied_size(&self) -> Option<Size> {
+        match self {
+            Location::Reg(reg) => {
+                if is_byte(reg) {
+                    Some(Size::Byte)
+                } else {
+                    Some(Size::Word)
+                }
+            }
+            Location::Mem(_) => None,
+            Location::Immediate16(_) => Some(Size::Word),
+            Location::Immediate8(_) => Some(Size::Byte),
+            Location::Eac(_) => None,
         }
     }
 }
