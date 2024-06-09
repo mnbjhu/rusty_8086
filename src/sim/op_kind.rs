@@ -62,7 +62,7 @@ mod test {
 
     #[test]
     fn add_to_pos_byte() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_8(AL, 1);
         state.set_register_8(BL, 2);
 
@@ -78,7 +78,7 @@ mod test {
 
     #[test]
     fn add_to_neg_byte() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_8(AL, 0);
         state.set_register_8(BL, 0xFF);
 
@@ -94,7 +94,7 @@ mod test {
 
     #[test]
     fn add_to_zero_byte() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_8(AL, 0);
         state.set_register_8(BL, 0);
 
@@ -110,7 +110,7 @@ mod test {
 
     #[test]
     fn sub_to_pos_byte() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_8(AL, 3);
         state.set_register_8(BL, 2);
 
@@ -126,7 +126,7 @@ mod test {
 
     #[test]
     fn sub_to_neg_byte() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_8(AL, 0);
         state.set_register_8(BL, 0xFF);
 
@@ -142,7 +142,7 @@ mod test {
 
     #[test]
     fn sub_to_zero_byte() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_8(AL, 0);
         state.set_register_8(BL, 0);
 
@@ -158,7 +158,7 @@ mod test {
 
     #[test]
     fn cmp_to_pos_byte() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_8(AL, 3);
         state.set_register_8(BL, 2);
 
@@ -174,7 +174,7 @@ mod test {
 
     #[test]
     fn cmp_to_neg_byte() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_8(AL, 0);
         state.set_register_8(BL, 0xFF);
 
@@ -190,7 +190,7 @@ mod test {
 
     #[test]
     fn cmp_to_zero_byte() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_8(AL, 0);
         state.set_register_8(BL, 0);
 
@@ -206,7 +206,7 @@ mod test {
 
     #[test]
     fn add_to_pos_word() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_16(AX, 1);
         state.set_register_16(BX, 2);
 
@@ -222,7 +222,7 @@ mod test {
 
     #[test]
     fn add_to_neg_word() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_16(AX, 0);
         state.set_register_16(BX, 0xFFFF);
 
@@ -238,7 +238,7 @@ mod test {
 
     #[test]
     fn add_to_zero_word() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_16(AX, 0);
         state.set_register_16(BX, 0);
 
@@ -254,7 +254,7 @@ mod test {
 
     #[test]
     fn sub_to_pos_word() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_16(AX, 3);
         state.set_register_16(BX, 2);
 
@@ -270,7 +270,7 @@ mod test {
 
     #[test]
     fn sub_to_neg_word() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_16(AX, 0);
         state.set_register_16(BX, 0xFFFF);
 
@@ -286,7 +286,7 @@ mod test {
 
     #[test]
     fn sub_to_zero_word() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_16(AX, 0);
         state.set_register_16(BX, 0);
 
@@ -302,7 +302,7 @@ mod test {
 
     #[test]
     fn cmp_to_pos_word() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_16(AX, 3);
         state.set_register_16(BX, 2);
 
@@ -318,7 +318,7 @@ mod test {
 
     #[test]
     fn cmp_to_neg_word() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_16(AX, 0);
         state.set_register_16(BX, 0xFFFF);
 
@@ -334,7 +334,7 @@ mod test {
 
     #[test]
     fn cmp_to_zero_word() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![]);
         state.set_register_16(AX, 0);
         state.set_register_16(BX, 0);
 

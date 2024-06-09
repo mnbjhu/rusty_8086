@@ -1,16 +1,13 @@
 use std::path::PathBuf;
 
-use crate::{decoder::decode, sim::SimState};
+use crate::sim::SimState;
 
 pub fn sim(path: &PathBuf) {
     let bytes = std::fs::read(path).unwrap();
-    let found = decode(bytes);
-    let mut state = SimState::default();
+    let mut state = SimState::new(bytes);
     println!("start");
     println!("{}", state);
-    for instr in found {
-        state.execute(&instr);
-    }
+    state.run();
     println!("end");
     println!("{}", state)
 }
