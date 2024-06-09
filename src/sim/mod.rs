@@ -108,10 +108,10 @@ impl Display for SimState {
         writeln!(f, "bx: {:04x}", self.registers[1])?;
         writeln!(f, "cx: {:04x}", self.registers[2])?;
         writeln!(f, "dx: {:04x}", self.registers[3])?;
-        writeln!(f, "si: {:04x}", self.registers[4])?;
-        writeln!(f, "di: {:04x}", self.registers[5])?;
+        writeln!(f, "sp: {:04x}", self.registers[7])?;
         writeln!(f, "bp: {:04x}", self.registers[6])?;
-        writeln!(f, "sp: {:04x}", self.registers[7])
+        writeln!(f, "si: {:04x}", self.registers[4])?;
+        writeln!(f, "di: {:04x}", self.registers[5])
     }
 }
 
@@ -212,7 +212,7 @@ mod test {
             ],
         };
         let expected =
-            "ax: 1234\nbx: 5678\ncx: 9abc\ndx: def0\nsi: 1357\ndi: 2468\nbp: ace0\nsp: beef\n";
+            "ax: 1234\nbx: 5678\ncx: 9abc\ndx: def0\nsp: beef\nbp: ace0\nsi: 1357\ndi: 2468\n";
         assert_eq!(format!("{}", state), expected);
     }
 }
