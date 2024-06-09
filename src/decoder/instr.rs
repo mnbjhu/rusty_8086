@@ -32,7 +32,7 @@ pub fn decode_instr(state: &mut DecoderState) -> Instr {
         .or_else(|| decode_op(state))
         .or_else(|| decode_jump(state));
     if let Some(instr) = instr {
-        return instr;
+        instr
     } else {
         panic!("Unknown instruction: {:#10b} ", state.get_byte(0))
     }
