@@ -47,16 +47,12 @@ impl OpInstr {
 
 #[cfg(test)]
 mod test {
-    use crate::{decoder::decode, sim::SimState};
+    use crate::sim::SimState;
 
     #[test]
     fn test_add_imm_to_reg() {
-        let mut state = SimState::default();
-        decode(vec![0b10000011, 0b11000000, 0b1])
-            .into_iter()
-            .for_each(|instr| {
-                state.execute(&instr);
-            });
+        let mut state = SimState::new(vec![0b10000011, 0b11000000, 0b1]);
+        state.run();
         assert_eq!(state.get_register_16("ax"), 1);
         assert_eq!(state.flags.zero, false, "zero flag should be false");
         assert_eq!(state.flags.sign, false, "sign flag should be false");
@@ -64,12 +60,8 @@ mod test {
 
     #[test]
     fn test_add_imm_to_reg_byte() {
-        let mut state = SimState::default();
-        decode(vec![0b10000011, 0b11000000, 0b1])
-            .into_iter()
-            .for_each(|instr| {
-                state.execute(&instr);
-            });
+        let mut state = SimState::new(vec![0b10000011, 0b11000000, 0b1]);
+        state.run();
         assert_eq!(state.get_register_8("al"), 1);
         assert_eq!(state.flags.zero, false, "zero flag should be false");
         assert_eq!(state.flags.sign, false, "sign flag should be false");
@@ -77,12 +69,8 @@ mod test {
 
     #[test]
     fn test_add_imm_to_reg_byte_plus() {
-        let mut state = SimState::default();
-        decode(vec![0b101, 0b11101000, 0b11])
-            .into_iter()
-            .for_each(|instr| {
-                state.execute(&instr);
-            });
+        let mut state = SimState::new(vec![0b101, 0b11101000, 0b11]);
+        state.run();
         assert_eq!(state.get_register_16("ax"), 1000);
         assert_eq!(state.flags.zero, false, "zero flag should be false");
         assert_eq!(state.flags.sign, false, "sign flag should be false");
@@ -90,11 +78,9 @@ mod test {
 
     #[test]
     fn test_add_reg_to_reg_byte() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![0b100, 0b1]);
         state.set_register_8("bl", 1);
-        decode(vec![0b100, 0b1]).into_iter().for_each(|instr| {
-            state.execute(&instr);
-        });
+        state.run();
         assert_eq!(state.get_register_8("al"), 1);
         assert_eq!(state.flags.zero, false, "zero flag should be false");
         assert_eq!(state.flags.sign, false, "sign flag should be false");
@@ -102,13 +88,9 @@ mod test {
 
     #[test]
     fn test_add_reg_to_reg_byte_twice() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![0b0, 0b11011000, 0b0, 0b11011000]);
         state.set_register_8("bl", 1);
-        decode(vec![0b0, 0b11011000, 0b0, 0b11011000])
-            .into_iter()
-            .for_each(|instr| {
-                state.execute(&instr);
-            });
+        state.run();
         assert_eq!(state.get_register_8("al"), 2);
         assert_eq!(state.flags.zero, false, "zero flag should be false");
         assert_eq!(state.flags.sign, false, "sign flag should be false");
@@ -116,11 +98,9 @@ mod test {
 
     #[test]
     fn test_add_reg_to_reg_word() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![0b1, 0b11011000]);
         state.set_register_16("bx", 1);
-        decode(vec![0b1, 0b11011000]).into_iter().for_each(|instr| {
-            state.execute(&instr);
-        });
+        state.run();
         assert_eq!(state.get_register_16("ax"), 1);
         assert_eq!(state.flags.zero, false, "zero flag should be false");
         assert_eq!(state.flags.sign, false, "sign flag should be false");
@@ -128,13 +108,9 @@ mod test {
 
     #[test]
     fn test_add_reg_to_reg_word_twice() {
-        let mut state = SimState::default();
+        let mut state = SimState::new(vec![0b1, 0b11011000, 0b1, 0b11011000]);
         state.set_register_16("bx", 1);
-        decode(vec![0b1, 0b11011000, 0b1, 0b11011000])
-            .into_iter()
-            .for_each(|instr| {
-                state.execute(&instr);
-            });
+        state.run();
         assert_eq!(state.get_register_16("ax"), 2);
         assert_eq!(state.flags.zero, false, "zero flag should be false");
         assert_eq!(state.flags.sign, false, "sign flag should be false");

@@ -38,4 +38,9 @@ impl DecoderState {
     pub fn get_instr_len(&self) -> usize {
         self.instr_len
     }
+
+    pub fn advance(&mut self) {
+        self.offset += self.instr_len;
+        self.instr_len = 0;
+    }
 }
