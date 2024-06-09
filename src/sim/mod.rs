@@ -5,6 +5,7 @@ use crate::decoder::{instr::Instr, loc::Location, mov::MoveInstr};
 use self::flags::Flags;
 
 pub mod flags;
+pub mod op_kind;
 
 #[derive(Default)]
 pub struct SimState {

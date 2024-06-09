@@ -1,7 +1,4 @@
-use crate::decoder::{
-    loc::Location,
-    op::{OpInstr, OpKind},
-};
+use crate::decoder::{loc::Location, op::OpInstr};
 
 use super::{is_byte, SimState};
 
@@ -39,65 +36,11 @@ impl OpInstr {
                 }
             }
             (Location::Reg(dest), Location::Immediate16(value)) => {
-                if is_byte(dest) {
-                    let current = state.get_register_8(dest);
-                    let res = self.kind.execute_byte(state, current, *value as u8);
-                    state.set_register_8(dest, res);
-                } else {
-                    let current = state.get_register_16(dest);
-                    let res = self.kind.execute_word(state, current, *value);
-                    state.set_register_16(dest, res);
-                }
+                let current = state.get_register_16(dest);
+                let res = self.kind.execute_word(state, current, *value);
+                state.set_register_16(dest, res);
             }
             _ => unimplemented!(),
-        }
-    }
-}
-
-impl OpKind {
-    pub fn execute_byte(&self, state: &mut SimState, first: u8, second: u8) -> u8 {
-        match self {
-            OpKind::Add => {
-                let result = first.wrapping_add(second);
-                state.flags.zero = result == 0;
-                state.flags.sign = result & 0x80 != 0;
-                result
-            }
-            OpKind::Sub => {
-                let result = first.wrapping_sub(second);
-                state.flags.zero = result == 0;
-                state.flags.sign = result & 0x80 != 0;
-                result
-            }
-            OpKind::Cmp => {
-                let result = first.wrapping_sub(second);
-                state.flags.zero = result == 0;
-                state.flags.sign = result & 0x80 != 0;
-                first
-            }
-        }
-    }
-
-    pub fn execute_word(&self, state: &mut SimState, first: u16, second: u16) -> u16 {
-        match self {
-            OpKind::Add => {
-                let result = first.wrapping_add(second);
-                state.flags.zero = result == 0;
-                state.flags.sign = result & 0x8000 != 0;
-                result
-            }
-            OpKind::Sub => {
-                let result = first.wrapping_sub(second);
-                state.flags.zero = result == 0;
-                state.flags.sign = result & 0x8000 != 0;
-                result
-            }
-            OpKind::Cmp => {
-                let result = first.wrapping_sub(second);
-                state.flags.zero = result == 0;
-                state.flags.sign = result & 0x8000 != 0;
-                first
-            }
         }
     }
 }
@@ -114,6 +57,82 @@ mod test {
             state.execute(&instr);
         });
         assert_eq!(state.get_register_16("ax"), 1);
+        assert_eq!(state.flags.zero, false, "zero flag should be false");
+        assert_eq!(state.flags.sign, false, "sign flag should be false");
+    }
+
+    #[test]
+    fn test_add_imm_to_reg_byte() {
+        let mut bytes = vec![0b10000011, 0b11000000, 0b1].into_iter();
+        let mut state = SimState::default();
+        decode(&mut bytes).into_iter().for_each(|instr| {
+            state.execute(&instr);
+        });
+        assert_eq!(state.get_register_8("al"), 1);
+        assert_eq!(state.flags.zero, false, "zero flag should be false");
+        assert_eq!(state.flags.sign, false, "sign flag should be false");
+    }
+
+    #[test]
+    fn test_add_imm_to_reg_byte_plus() {
+        let mut bytes = vec![0b101, 0b11101000, 0b11].into_iter();
+        let mut state = SimState::default();
+        decode(&mut bytes).into_iter().for_each(|instr| {
+            state.execute(&instr);
+        });
+        assert_eq!(state.get_register_16("ax"), 1000);
+        assert_eq!(state.flags.zero, false, "zero flag should be false");
+        assert_eq!(state.flags.sign, false, "sign flag should be false");
+    }
+
+    #[test]
+    fn test_add_reg_to_reg_byte() {
+        let mut bytes = vec![0b100, 0b1].into_iter();
+        let mut state = SimState::default();
+        state.set_register_8("bl", 1);
+        decode(&mut bytes).into_iter().for_each(|instr| {
+            state.execute(&instr);
+        });
+        assert_eq!(state.get_register_8("al"), 1);
+        assert_eq!(state.flags.zero, false, "zero flag should be false");
+        assert_eq!(state.flags.sign, false, "sign flag should be false");
+    }
+
+    #[test]
+    fn test_add_reg_to_reg_byte_twice() {
+        let mut bytes = vec![0b0, 0b11011000, 0b0, 0b11011000].into_iter();
+        let mut state = SimState::default();
+        state.set_register_8("bl", 1);
+        decode(&mut bytes).into_iter().for_each(|instr| {
+            state.execute(&instr);
+        });
+        assert_eq!(state.get_register_8("al"), 2);
+        assert_eq!(state.flags.zero, false, "zero flag should be false");
+        assert_eq!(state.flags.sign, false, "sign flag should be false");
+    }
+
+    #[test]
+    fn test_add_reg_to_reg_word() {
+        let mut bytes = vec![0b1, 0b11011000].into_iter();
+        let mut state = SimState::default();
+        state.set_register_16("bx", 1);
+        decode(&mut bytes).into_iter().for_each(|instr| {
+            state.execute(&instr);
+        });
+        assert_eq!(state.get_register_16("ax"), 1);
+        assert_eq!(state.flags.zero, false, "zero flag should be false");
+        assert_eq!(state.flags.sign, false, "sign flag should be false");
+    }
+
+    #[test]
+    fn test_add_reg_to_reg_word_twice() {
+        let mut bytes = vec![0b1, 0b11011000, 0b1, 0b11011000].into_iter();
+        let mut state = SimState::default();
+        state.set_register_16("bx", 1);
+        decode(&mut bytes).into_iter().for_each(|instr| {
+            state.execute(&instr);
+        });
+        assert_eq!(state.get_register_16("ax"), 2);
         assert_eq!(state.flags.zero, false, "zero flag should be false");
         assert_eq!(state.flags.sign, false, "sign flag should be false");
     }
