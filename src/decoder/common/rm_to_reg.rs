@@ -45,7 +45,7 @@ pub fn decode_rm(state: &mut DecoderState) -> Location {
     let w = first & 0b00000001;
     let second = state.get_byte(1);
     let mod_ = (second & 0b11000000) >> 6;
-    let rm = if mod_ != 0b11 {
+    if mod_ != 0b11 {
         if (second & 0b00000111) == 0b110 && mod_ == 0 {
             let low = state.get_byte(2);
             let high = state.get_byte(3);
@@ -56,6 +56,5 @@ pub fn decode_rm(state: &mut DecoderState) -> Location {
         }
     } else {
         Location::Reg(decode_reg(w, second & 0b000000111))
-    };
-    rm
+    }
 }
