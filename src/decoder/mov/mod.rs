@@ -46,12 +46,12 @@ pub fn decode_mov(byte: u8, bytes: &mut IntoIter<u8>) -> Option<Instr> {
             let (dest, src) = decode_rm_to_from_reg(byte, bytes);
             Some(Instr::Mov(MoveInstr { dest, src }))
         }
-        // Immediate to Register/Memory
+        // Immediate to Register
         _ if 0b10110000 == byte & 0b11110000 => {
             let (dest, src) = decode_imm_to_reg(byte, bytes);
             Some(Instr::Mov(MoveInstr { dest, src }))
         }
-        // Immediate to Register
+        // Immediate to Register/Memory
         _ if 0b11000110 == byte & 0b11111110 => {
             let second = bytes.next().unwrap();
             let (dest, src) = decode_imm_to_rm(byte, second, bytes);

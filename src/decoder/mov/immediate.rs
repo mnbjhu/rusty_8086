@@ -3,7 +3,7 @@ mod test {
     use crate::decoder::{
         decode,
         instr::Instr,
-        loc::Location,
+        loc::{eac::EffectiveAddress, eac_mode::EffectiveAddressMode, Location},
         mov::{MoveInstr, CH, CL, CX, DX},
     };
 
@@ -70,6 +70,22 @@ mod test {
             Instr::Mov(MoveInstr {
                 dest: Location::Reg(DX),
                 src: Location::Immediate16(61588),
+            })
+        );
+    }
+
+    #[test]
+    fn test_16bit_immediate_to_rm() {
+        let mut bytes = vec![0b11000111, 0b100, 0b1100100, 0b0].into_iter();
+        let asm = decode(&mut bytes);
+
+        assert_eq!(asm.len(), 1);
+
+        assert_eq!(
+            asm[0],
+            Instr::Mov(MoveInstr {
+                dest: Location::Eac(EffectiveAddress::Byte(EffectiveAddressMode::Si, 0)),
+                src: Location::Immediate8(12),
             })
         );
     }

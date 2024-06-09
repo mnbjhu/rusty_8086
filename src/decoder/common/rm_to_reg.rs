@@ -11,8 +11,19 @@ pub fn decode_rm_to_from_reg(first: u8, bytes: &mut IntoIter<u8>) -> (Location, 
     let w = first & 0b00000001;
     let reg = (second & 0b000111000) >> 3;
     let reg = decode_reg(w, reg);
-    let mod_ = second & 0b11000000;
-    let rm = if mod_ != 0b11000000 {
+    let rm = decode_rm(first, second, bytes);
+
+    if d == 0 {
+        (rm, Location::Reg(reg))
+    } else {
+        (Location::Reg(reg), rm)
+    }
+}
+
+pub fn decode_rm(first: u8, second: u8, bytes: &mut IntoIter<u8>) -> Location {
+    let w = first & 0b00000001;
+    let mod_ = (second & 0b11000000) >> 6;
+    if mod_ != 0b11 {
         if (second & 0b00000111) == 0b110 && mod_ == 0 {
             if w == 0 {
                 Location::Mem(bytes.next().unwrap() as u16)
@@ -26,12 +37,6 @@ pub fn decode_rm_to_from_reg(first: u8, bytes: &mut IntoIter<u8>) -> (Location, 
         }
     } else {
         Location::Reg(decode_reg(w, second & 0b000000111))
-    };
-
-    if d == 0 {
-        (rm, Location::Reg(reg))
-    } else {
-        (Location::Reg(reg), rm)
     }
 }
 

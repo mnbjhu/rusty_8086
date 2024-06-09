@@ -1,3 +1,3 @@
 bits 16
 
-add ax, 1000
+mov [si], word 100
