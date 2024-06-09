@@ -12,7 +12,7 @@ pub fn decode_imm_to_rm(state: &mut DecoderState) -> (Location, Location) {
 fn decode_imm(state: &mut DecoderState) -> Location {
     let w = state.get_byte(0) & 0b00000001;
     let len = state.get_instr_len();
-    let src = if w == 0 {
+    if w == 0 {
         let data = state.get_byte(len);
         state.add_len(1);
         Location::Immediate8(data)
@@ -23,8 +23,7 @@ fn decode_imm(state: &mut DecoderState) -> Location {
 
         let data = (high as u16) << 8 | low as u16;
         Location::Immediate16(data)
-    };
-    src
+    }
 }
 
 #[cfg(test)]
