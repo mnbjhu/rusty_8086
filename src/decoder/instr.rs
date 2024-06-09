@@ -12,8 +12,8 @@ use super::{op::OpInstr, state::DecoderState};
 pub enum Instr {
     Mov(MoveInstr),
     Op(OpInstr),
-    Je(u8),
-    Jne(u8),
+    Je(i8),
+    Jne(i8),
 }
 
 impl Display for Instr {

@@ -6,12 +6,12 @@ pub fn decode_jump(state: &mut DecoderState) -> Option<Instr> {
         _ if 0b01110100 == byte => {
             let to = state.get_byte(1);
             state.add_len(2);
-            Some(Instr::Je(to))
+            Some(Instr::Je(to as i8))
         }
         _ if 0b01110101 == byte => {
             let to = state.get_byte(1);
             state.add_len(2);
-            Some(Instr::Jne(to))
+            Some(Instr::Jne(to as i8))
         }
         _ => None,
     }

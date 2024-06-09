@@ -10,6 +10,7 @@ use crate::decoder::{
 use self::flags::Flags;
 
 pub mod flags;
+pub mod jmp;
 pub mod op_kind;
 
 pub struct SimState {
@@ -89,7 +90,8 @@ impl SimState {
         match instr {
             Instr::Mov(mov) => self.execute_mov(mov),
             Instr::Op(op) => op.execute(self),
-            _ => unimplemented!(),
+            Instr::Je(offset) => self.execute_je(*offset),
+            Instr::Jne(offset) => self.execute_jne(*offset),
         }
     }
 
