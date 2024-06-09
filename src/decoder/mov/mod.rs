@@ -1,5 +1,5 @@
 use core::panic;
-use std::{fmt::Display, vec::IntoIter};
+use std::fmt::Display;
 
 use crate::decoder::{
     common::{
@@ -10,7 +10,7 @@ use crate::decoder::{
     mov::acc::{decode_acc_to_mem, decode_mem_to_acc},
 };
 
-use super::loc::Location;
+use super::{loc::Location, state::DecoderState};
 
 pub mod acc;
 pub mod immediate;
@@ -39,28 +39,28 @@ pub const CH: &str = "ch";
 pub const DH: &str = "dh";
 pub const BH: &str = "bh";
 
-pub fn decode_mov(byte: u8, bytes: &mut IntoIter<u8>) -> Option<Instr> {
+pub fn decode_mov(state: &mut DecoderState) -> Option<Instr> {
+    let byte = state.get_byte(0);
     match byte {
         // Register/Memory to/from Register
         _ if 0b10001000 == byte & 0b11111100 => {
-            let (dest, src) = decode_rm_to_from_reg(byte, bytes);
+            let (dest, src) = decode_rm_to_from_reg(state);
             Some(Instr::Mov(MoveInstr { dest, src }))
         }
         // Immediate to Register/Memory
         _ if 0b10110000 == byte & 0b11110000 => {
-            let (dest, src) = decode_imm_to_reg(byte, bytes);
+            let (dest, src) = decode_imm_to_reg(state);
             Some(Instr::Mov(MoveInstr { dest, src }))
         }
         // Immediate to Register
         _ if 0b11000110 == byte & 0b11111110 => {
-            let second = bytes.next().unwrap();
-            let (dest, src) = decode_imm_to_rm(byte, second, bytes);
+            let (dest, src) = decode_imm_to_rm(state);
             Some(Instr::Mov(MoveInstr { dest, src }))
         }
         // Memory to Accumulator
-        _ if 0b10100000 == byte & 0b11111110 => Some(Instr::Mov(decode_mem_to_acc(byte, bytes))),
+        _ if 0b10100000 == byte & 0b11111110 => Some(Instr::Mov(decode_mem_to_acc(state))),
         // Accumulator to Memory
-        _ if 0b10100010 == byte & 0b11111110 => Some(Instr::Mov(decode_acc_to_mem(byte, bytes))),
+        _ if 0b10100010 == byte & 0b11111110 => Some(Instr::Mov(decode_acc_to_mem(state))),
         _ => None,
     }
 }
@@ -104,31 +104,30 @@ impl Display for MoveInstr {
 #[cfg(test)]
 mod test {
     use crate::decoder::{
+        common::rm_to_reg::decode_rm_to_from_reg,
         decode,
         instr::Instr,
         loc::{eac::EffectiveAddress, eac_mode::EffectiveAddressMode},
         mov::{Location, MoveInstr, AH, AL, AX, BP, BX, CH, CL, CX, DI, DX, SI, SP},
+        state::DecoderState,
     };
 
     #[test]
     fn basic_test() {
-        let bytes = vec![0b10001001, 0b11011001];
-        let mut bytes = bytes.into_iter();
-        let (dest, src) = super::decode_rm_to_from_reg(bytes.next().unwrap(), &mut bytes);
+        let mut state = DecoderState::new(vec![0b10001001, 0b11011001]);
+        let (dest, src) = decode_rm_to_from_reg(&mut state);
         assert_eq!(dest, Location::Reg(CX));
         assert_eq!(src, Location::Reg(BX));
     }
 
     #[test]
     fn extended_test() {
-        let mut bytes = vec![
+        let asm = decode(vec![
             0b10001001, 0b11011001, 0b10001000, 0b11100101, 0b10001001, 0b11011010, 0b10001001,
             0b11011110, 0b10001001, 0b11111011, 0b10001000, 0b11001000, 0b10001000, 0b11101101,
             0b10001001, 0b11000011, 0b10001001, 0b11110011, 0b10001001, 0b11111100, 0b10001001,
             0b11000101,
-        ]
-        .into_iter();
-        let asm = decode(&mut bytes);
+        ]);
 
         println!("{:?}", asm);
         assert_eq!(asm.len(), 11);

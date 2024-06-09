@@ -1,18 +1,23 @@
-use std::vec::IntoIter;
+use crate::decoder::{
+    loc::{eac::decode_eac, Location},
+    state::DecoderState,
+};
 
-use crate::decoder::loc::{eac::decode_eac, Location};
-
-pub fn decode_imm_to_rm(first: u8, second: u8, bytes: &mut IntoIter<u8>) -> (Location, Location) {
+pub fn decode_imm_to_rm(state: &mut DecoderState) -> (Location, Location) {
+    let first = state.get_byte(0);
+    state.add_len(1);
     let w = first & 0b00000001;
-    let eac = decode_eac(second, bytes);
+    let eac = decode_eac(state);
     let src = if w == 0 {
-        let second = bytes.next().unwrap();
-        Location::Immediate8(second)
+        let data = state.get_byte(1);
+        state.add_len(1);
+        Location::Immediate8(data)
     } else {
-        let second = bytes.next().unwrap();
-        let third = bytes.next().unwrap();
-        let second = (third as u16) << 8 | second as u16;
-        Location::Immediate16(second)
+        let second = state.get_byte(1);
+        let third = state.get_byte(2);
+        state.add_len(2);
+        let data = (third as u16) << 8 | second as u16;
+        Location::Immediate16(data)
     };
     (Location::Eac(eac), src)
 }
@@ -28,9 +33,7 @@ mod test {
 
     #[test]
     fn test_decode_8bit_imm_to_rm() {
-        let mut bytes = vec![0b10110011, 0b1100100].into_iter();
-
-        let asm = decode(&mut bytes);
+        let asm = decode(vec![0b10110011, 0b1100100]);
 
         assert_eq!(asm.len(), 1);
         assert_eq!(
@@ -44,9 +47,7 @@ mod test {
 
     #[test]
     fn test_decode_16bit_imm_to_rm() {
-        let mut bytes = vec![0b10111011, 0b1100100, 0b0].into_iter();
-
-        let asm = decode(&mut bytes);
+        let asm = decode(vec![0b10111011, 0b1100100, 0b0]);
 
         assert_eq!(asm.len(), 1);
         assert_eq!(

@@ -1,15 +1,16 @@
-use std::vec::IntoIter;
+use super::{instr::Instr, state::DecoderState};
 
-use super::instr::Instr;
-
-pub fn decode_jump(byte: u8, bytes: &mut IntoIter<u8>) -> Option<Instr> {
+pub fn decode_jump(state: &mut DecoderState) -> Option<Instr> {
+    let byte = state.get_byte(0);
     match byte {
         _ if 0b01110100 == byte => {
-            let to = bytes.next().unwrap();
+            let to = state.get_byte(1);
+            state.add_len(2);
             Some(Instr::Je(to))
         }
         _ if 0b01110101 == byte => {
-            let to = bytes.next().unwrap();
+            let to = state.get_byte(1);
+            state.add_len(2);
             Some(Instr::Jne(to))
         }
         _ => None,
@@ -22,8 +23,7 @@ mod test {
 
     #[test]
     fn test_jump_eq_zero() {
-        let mut bytes = vec![0b01110100, 0b00000111].into_iter();
-        let asm = decode(&mut bytes);
+        let asm = decode(vec![0b01110100, 0b00000111]);
 
         assert_eq!(asm.len(), 1);
         assert_eq!(asm[0], Instr::Je(7));
@@ -31,8 +31,7 @@ mod test {
 
     #[test]
     fn test_jump_not_eq_zero() {
-        let mut bytes = vec![0b01110101, 0b00000111].into_iter();
-        let asm = decode(&mut bytes);
+        let asm = decode(vec![0b01110101, 0b00000111]);
 
         assert_eq!(asm.len(), 1);
         assert_eq!(asm[0], Instr::Jne(7));

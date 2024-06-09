@@ -1,4 +1,4 @@
-use std::{fmt::Display, vec::IntoIter};
+use std::fmt::Display;
 
 use crate::decoder::{
     jump::decode_jump,
@@ -6,7 +6,7 @@ use crate::decoder::{
     op::decode_op,
 };
 
-use super::op::OpInstr;
+use super::{op::OpInstr, state::DecoderState};
 
 #[derive(Debug, PartialEq)]
 pub enum Instr {
@@ -27,18 +27,15 @@ impl Display for Instr {
     }
 }
 
-pub fn decode_instr(byte: u8, bytes: &mut IntoIter<u8>, count: i32) -> Instr {
-    if let Some(instr) = decode_mov(byte, bytes) {
+pub fn decode_instr(state: &mut DecoderState) -> Instr {
+    let instr = decode_mov(state)
+        .or_else(|| decode_op(state))
+        .or_else(|| decode_jump(state));
+    if let Some(instr) = instr {
         return instr;
+    } else {
+        panic!("Unknown instruction: {:#10b} ", state.get_byte(0))
     }
-    if let Some(instr) = decode_op(byte, bytes) {
-        return instr;
-    }
-    if let Some(instr) = decode_jump(byte, bytes) {
-        return instr;
-    }
-
-    panic!("Unknown instruction #{}: {:#10b} ", count, byte)
 }
 
 #[cfg(test)]

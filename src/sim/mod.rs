@@ -147,64 +147,70 @@ mod test {
 
     #[test]
     fn test_mov_imm_to_reg_lower() {
-        let mut bytes = vec![0b10110011, 0b1100100].into_iter();
         let mut state = SimState::default();
-        decode(&mut bytes).into_iter().for_each(|instr| {
-            state.execute(&instr);
-        });
+        decode(vec![0b10110011, 0b1100100])
+            .into_iter()
+            .for_each(|instr| {
+                state.execute(&instr);
+            });
         assert_eq!(state.get_register_8("bl"), 100);
     }
 
     #[test]
     fn test_mov_imm_to_reg_higher() {
-        let mut bytes = vec![0b10110111, 0b1100100].into_iter();
         let mut state = SimState::default();
-        decode(&mut bytes).into_iter().for_each(|instr| {
-            state.execute(&instr);
-        });
+        decode(vec![0b10110111, 0b1100100])
+            .into_iter()
+            .for_each(|instr| {
+                state.execute(&instr);
+            });
         assert_eq!(state.get_register_8("bh"), 100);
     }
 
     #[test]
     fn test_mov_imm_to_reg_16bit() {
-        let mut bytes = vec![0b10111011, 0b1100100, 0b0].into_iter();
         let mut state = SimState::default();
-        decode(&mut bytes).into_iter().for_each(|instr| {
-            state.execute(&instr);
-        });
+        decode(vec![0b10111011, 0b1100100, 0b0])
+            .into_iter()
+            .for_each(|instr| {
+                state.execute(&instr);
+            });
         assert_eq!(state.get_register_16("bx"), 100);
     }
 
     #[test]
     fn test_mov_reg_high_to_reg_low() {
-        let mut bytes = vec![0b10001000, 0b11010101].into_iter();
         let mut state = SimState::default();
         state.set_register_8("dl", 100);
-        decode(&mut bytes).into_iter().for_each(|instr| {
-            state.execute(&instr);
-        });
+        decode(vec![0b10001000, 0b11010101])
+            .into_iter()
+            .for_each(|instr| {
+                state.execute(&instr);
+            });
         assert_eq!(state.get_register_8("ch"), 100);
     }
 
     #[test]
     fn test_mov_reg_low_to_reg_high() {
-        let mut bytes = vec![0b10001000, 0b11101010].into_iter();
         let mut state = SimState::default();
         state.set_register_8("ch", 100);
-        decode(&mut bytes).into_iter().for_each(|instr| {
-            state.execute(&instr);
-        });
+        decode(vec![0b10001000, 0b11101010])
+            .into_iter()
+            .for_each(|instr| {
+                state.execute(&instr);
+            });
         assert_eq!(state.get_register_8("dl"), 100);
     }
 
     #[test]
     fn mov_reg_to_reg() {
-        let mut bytes = vec![0b10001001, 0b11000001].into_iter();
         let mut state = SimState::default();
         state.set_register_16("ax", 1234);
-        decode(&mut bytes).into_iter().for_each(|instr| {
-            state.execute(&instr);
-        });
+        decode(vec![0b10001001, 0b11000001])
+            .into_iter()
+            .for_each(|instr| {
+                state.execute(&instr);
+            });
         assert_eq!(state.get_register_16("cx"), 1234);
     }
 
