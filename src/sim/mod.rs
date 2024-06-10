@@ -1,9 +1,9 @@
-use std::fmt::Display;
+use std::{fmt::Display, path::PathBuf};
 
 use crate::decoder::{
     instr::{decode_instr, Instr},
     loc::{eac::EffectiveAddress, eac_mode::EffectiveAddressMode, Location, Size},
-    mov::{MoveInstr, BX, SI},
+    mov::{MoveInstr, BP, BX, DI, SI},
     state::Decoder,
 };
 
@@ -116,9 +116,22 @@ impl SimState {
         }
     }
 
+    pub fn write_memory(&self, file: &PathBuf) {
+        std::fs::write(file, &self.memory).unwrap();
+    }
+
     pub fn run(&mut self) {
         while self.has_more() {
             let instr = decode_instr(self);
+            self.advance();
+            self.execute(&instr);
+        }
+    }
+
+    pub fn run_trace(&mut self) {
+        while self.has_more() {
+            let instr = decode_instr(self);
+            println!("{}", instr);
             self.advance();
             self.execute(&instr);
         }
@@ -142,9 +155,13 @@ impl SimState {
             Location::Reg(reg) => self.set_register_8(reg, value),
             Location::Immediate8(_) => panic!("Cannot set value to immediate"),
             Location::Immediate16(_) => panic!("Expected byte, got word: {}", value),
-            Location::Mem(addr) => self.memory[*addr as usize] = value,
+            Location::Mem(addr) => {
+                println!("Setting {} to mem: {:02x}", addr, value);
+                self.memory[*addr as usize] = value
+            }
             Location::Eac(eac) => {
                 let addr = self.get_addr(eac);
+                println!("Setting {} to mem: {:02x}", addr, value);
                 self.memory[addr as usize] = value;
             }
         }
@@ -175,11 +192,13 @@ impl SimState {
             Location::Immediate8(_) => panic!("Cannot set value to immediate"),
             Location::Immediate16(_) => panic!("Expected byte, got word: {}", value),
             Location::Mem(addr) => {
+                println!("Setting {} to mem: {:04x}", addr, value);
                 self.memory[*addr as usize] = value as u8;
                 self.memory[*addr as usize + 1] = (value >> 8) as u8;
             }
             Location::Eac(eac) => {
                 let addr = self.get_addr(eac);
+                println!("Setting {} to mem: {:04x}", addr, value);
                 self.memory[addr as usize] = value as u8;
                 self.memory[addr as usize + 1] = (value >> 8) as u8;
             }
@@ -199,25 +218,25 @@ impl SimState {
                 bx.wrapping_add(di).wrapping_add_signed(eac.offset())
             }
             EffectiveAddressMode::BpSi => {
-                let bp = self.get_register_16(BX);
+                let bp = self.get_register_16(BP);
                 let si = self.get_register_16(SI);
                 bp.wrapping_add(si).wrapping_add_signed(eac.offset())
             }
             EffectiveAddressMode::BpDi => {
-                let bp = self.get_register_16(BX);
-                let di = self.get_register_16(SI) as i16;
-                bp.wrapping_add_signed(di).wrapping_add_signed(eac.offset())
+                let bp = self.get_register_16(BP);
+                let di = self.get_register_16(DI);
+                bp.wrapping_add(di).wrapping_add_signed(eac.offset())
             }
             EffectiveAddressMode::Si => {
                 let si = self.get_register_16(SI);
                 si.wrapping_add_signed(eac.offset())
             }
             EffectiveAddressMode::Di => {
-                let di = self.get_register_16(SI);
+                let di = self.get_register_16(DI);
                 di.wrapping_add_signed(eac.offset())
             }
             EffectiveAddressMode::Bp => {
-                let bp = self.get_register_16(BX);
+                let bp = self.get_register_16(BP);
                 bp.wrapping_add_signed(eac.offset())
             }
             EffectiveAddressMode::Bx => {

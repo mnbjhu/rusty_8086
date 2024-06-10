@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::Parser;
+use clap::{Args, Parser};
 
 use crate::cli::disassemble::disassemble;
 use bytes::bytes;
@@ -16,7 +16,7 @@ mod sim;
 pub enum Command {
     Disassemble { path: PathBuf },
     Bytes { path: PathBuf },
-    Sim { path: PathBuf },
+    Sim(SimArgs),
 }
 
 impl Command {
@@ -24,7 +24,21 @@ impl Command {
         match self {
             Command::Disassemble { path } => disassemble(path),
             Command::Bytes { path } => bytes(path),
-            Command::Sim { path } => sim(path),
+            Command::Sim(SimArgs {
+                path,
+                output,
+                trace,
+            }) => sim(path, output, *trace),
         }
     }
+}
+
+#[derive(Args)]
+pub struct SimArgs {
+    #[clap(short, long)]
+    pub path: PathBuf,
+    #[clap(short, long)]
+    pub output: Option<PathBuf>,
+    #[clap(short, long)]
+    pub trace: bool,
 }
