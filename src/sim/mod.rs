@@ -4,7 +4,7 @@ use crate::decoder::{
     instr::{decode_instr, Instr},
     loc::Location,
     mov::MoveInstr,
-    state::DecoderState,
+    state::{Decoder, DecoderState},
 };
 
 use self::flags::Flags;

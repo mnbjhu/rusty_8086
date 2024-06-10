@@ -1,15 +1,15 @@
-use crate::decoder::{loc::Location, state::DecoderState};
+use crate::decoder::{loc::Location, state::Decoder};
 
 use super::rm_to_reg::decode_rm;
 
-pub fn decode_imm_to_rm(state: &mut DecoderState) -> (Location, Location) {
+pub fn decode_imm_to_rm<T: Decoder>(state: &mut T) -> (Location, Location) {
     state.add_len(2);
     let dest = decode_rm(state);
     let src = decode_imm(state);
     (dest, src)
 }
 
-fn decode_imm(state: &mut DecoderState) -> Location {
+fn decode_imm<T: Decoder>(state: &mut T) -> Location {
     let w = state.get_byte(0) & 0b00000001;
     let len = state.get_instr_len();
     if w == 0 {

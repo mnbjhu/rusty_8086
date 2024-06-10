@@ -4,9 +4,10 @@ use crate::decoder::{
     common::rm_to_reg::{decode_rm_to_from_reg, decode_rm_to_reg},
     instr::Instr,
     mov::{AL, AX},
+    state::Decoder,
 };
 
-use super::{loc::Location, state::DecoderState};
+use super::loc::Location;
 
 pub mod acc;
 
@@ -24,7 +25,7 @@ pub struct OpInstr {
     pub src: Location,
 }
 
-pub fn decode_op(state: &mut DecoderState) -> Option<Instr> {
+pub fn decode_op<T: Decoder>(state: &mut T) -> Option<Instr> {
     let byte = state.get_byte(0);
     match byte {
         // Register/Memory with Register to Either
@@ -54,7 +55,7 @@ pub fn decode_op(state: &mut DecoderState) -> Option<Instr> {
     }
 }
 
-fn decode_imm_to_acc(state: &mut DecoderState) -> Option<Instr> {
+fn decode_imm_to_acc<T: Decoder>(state: &mut T) -> Option<Instr> {
     let byte = state.get_byte(0);
     state.add_len(1);
     let w = 0b00000001 & byte;
