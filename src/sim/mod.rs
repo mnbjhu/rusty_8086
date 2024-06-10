@@ -117,7 +117,7 @@ impl SimState {
     }
 
     pub fn write_memory(&self, file: &PathBuf) {
-        std::fs::write(file, &self.memory).unwrap();
+        std::fs::write(file, self.memory).unwrap();
     }
 
     pub fn run(&mut self) {
