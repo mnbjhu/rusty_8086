@@ -3,13 +3,13 @@ use super::SimState;
 impl SimState {
     pub fn execute_je(&mut self, offset: i8) {
         if self.flags.zero {
-            self.decoder.offset = self.decoder.offset.wrapping_add_signed(offset as isize);
+            self.ip = self.ip.wrapping_add_signed(offset.into());
         }
     }
 
     pub fn execute_jne(&mut self, offset: i8) {
         if !self.flags.zero {
-            self.decoder.offset = self.decoder.offset.wrapping_add_signed(offset as isize);
+            self.ip = self.ip.wrapping_add_signed(offset.into());
         }
     }
 }
@@ -26,6 +26,6 @@ mod test {
         ]);
         state.run();
         assert_eq!(state.get_register_16(BX), 1030);
-        assert_eq!(state.decoder.offset, 14);
+        assert_eq!(state.ip, 14);
     }
 }

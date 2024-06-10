@@ -4,7 +4,7 @@ use crate::decoder::{
     instr::{decode_instr, Instr},
     loc::{eac::EffectiveAddress, eac_mode::EffectiveAddressMode, Location, Size},
     mov::{MoveInstr, BX, SI},
-    state::{Decoder, DecoderState},
+    state::Decoder,
 };
 
 use self::flags::Flags;
@@ -15,18 +15,25 @@ pub mod op_kind;
 
 pub struct SimState {
     registers: [u16; 8],
+    ip: u16,
     flags: Flags,
-    decoder: DecoderState,
+    instr_len: u8,
+    program_size: usize,
     memory: [u8; 0xFFFF],
 }
 
 impl SimState {
     pub fn new(src: Vec<u8>) -> Self {
+        let mut memory = [0; 0xFFFF];
+        let program_size = src.len();
+        memory[..program_size].copy_from_slice(&src);
         Self {
             registers: [0; 8],
             flags: Flags::default(),
-            decoder: DecoderState::new(src),
-            memory: [0; 0xFFFF],
+            memory,
+            instr_len: 0,
+            program_size,
+            ip: 0,
         }
     }
 
@@ -40,6 +47,7 @@ impl SimState {
             "di" => self.registers[5],
             "bp" => self.registers[6],
             "sp" => self.registers[7],
+            "ip" => self.ip,
             _ => panic!("Unknown register: {}", name),
         }
     }
@@ -109,9 +117,9 @@ impl SimState {
     }
 
     pub fn run(&mut self) {
-        while self.decoder.has_more() {
-            let instr = decode_instr(&mut self.decoder);
-            self.decoder.advance();
+        while self.has_more() {
+            let instr = decode_instr(self);
+            self.advance();
             self.execute(&instr);
         }
     }
@@ -220,6 +228,34 @@ impl SimState {
     }
 }
 
+impl Decoder for SimState {
+    fn has_more(&self) -> bool {
+        self.ip < self.program_size as u16
+    }
+
+    fn get_byte(&self, offset: usize) -> u8 {
+        self.memory[self.ip as usize + offset]
+    }
+
+    fn add_len(&mut self, len: usize) {
+        self.instr_len += len as u8;
+    }
+
+    fn next(&mut self) -> bool {
+        self.advance();
+        self.has_more()
+    }
+
+    fn get_instr_len(&self) -> usize {
+        self.instr_len as usize
+    }
+
+    fn advance(&mut self) {
+        self.ip += self.instr_len as u16;
+        self.instr_len = 0;
+    }
+}
+
 pub fn is_byte(reg: &str) -> bool {
     matches!(reg, "al" | "ah" | "bl" | "bh" | "cl" | "ch" | "dl" | "dh")
 }
@@ -239,7 +275,7 @@ impl Display for SimState {
 
 #[cfg(test)]
 mod test {
-    use crate::{decoder::state::DecoderState, sim::SimState};
+    use crate::sim::SimState;
 
     #[test]
     fn test_register_16() {
@@ -314,9 +350,11 @@ mod test {
             registers: [
                 0x1234, 0x5678, 0x9ABC, 0xDEF0, 0x1357, 0x2468, 0xACE0, 0xBEEF,
             ],
-            decoder: DecoderState::new(vec![]),
             flags: Default::default(),
             memory: [0; 0xFFFF],
+            instr_len: 0,
+            program_size: 0,
+            ip: 0,
         };
         let expected =
             "ax: 1234\nbx: 5678\ncx: 9abc\ndx: def0\nsp: beef\nbp: ace0\nsi: 1357\ndi: 2468\n";

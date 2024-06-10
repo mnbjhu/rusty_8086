@@ -261,7 +261,7 @@ mod test {
         assert_eq!(state.get_register_16("bx"), 1);
         assert_eq!(state.get_register_16("cx"), 2);
         assert_eq!(state.get_register_16("dx"), 10);
-        assert_eq!(state.get_register_16("bp"), 1);
-        assert_eq!(state.get_register_16("ip"), 1);
+        assert_eq!(state.get_register_16("bp"), 4);
+        assert_eq!(state.get_register_16("ip"), 48);
     }
 }
