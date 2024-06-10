@@ -54,8 +54,8 @@ mod test {
         let mut state = SimState::new(vec![0b10000011, 0b11000000, 0b1]);
         state.run();
         assert_eq!(state.get_register_16("ax"), 1);
-        assert_eq!(state.flags.zero, false, "zero flag should be false");
-        assert_eq!(state.flags.sign, false, "sign flag should be false");
+        assert!(!state.flags.zero, "zero flag should be false");
+        assert!(!state.flags.sign, "sign flag should be false");
     }
 
     #[test]
@@ -63,8 +63,8 @@ mod test {
         let mut state = SimState::new(vec![0b10000011, 0b11000000, 0b1]);
         state.run();
         assert_eq!(state.get_register_8("al"), 1);
-        assert_eq!(state.flags.zero, false, "zero flag should be false");
-        assert_eq!(state.flags.sign, false, "sign flag should be false");
+        assert!(!state.flags.zero, "zero flag should be false");
+        assert!(!state.flags.sign, "sign flag should be false");
     }
 
     #[test]
@@ -72,8 +72,8 @@ mod test {
         let mut state = SimState::new(vec![0b101, 0b11101000, 0b11]);
         state.run();
         assert_eq!(state.get_register_16("ax"), 1000);
-        assert_eq!(state.flags.zero, false, "zero flag should be false");
-        assert_eq!(state.flags.sign, false, "sign flag should be false");
+        assert!(!state.flags.zero, "zero flag should be false");
+        assert!(!state.flags.sign, "sign flag should be false");
     }
 
     #[test]
@@ -82,8 +82,8 @@ mod test {
         state.set_register_8("bl", 1);
         state.run();
         assert_eq!(state.get_register_8("al"), 1);
-        assert_eq!(state.flags.zero, false, "zero flag should be false");
-        assert_eq!(state.flags.sign, false, "sign flag should be false");
+        assert!(!state.flags.zero, "zero flag should be false");
+        assert!(!state.flags.sign, "sign flag should be false");
     }
 
     #[test]
@@ -92,8 +92,8 @@ mod test {
         state.set_register_8("bl", 1);
         state.run();
         assert_eq!(state.get_register_8("al"), 2);
-        assert_eq!(state.flags.zero, false, "zero flag should be false");
-        assert_eq!(state.flags.sign, false, "sign flag should be false");
+        assert!(!state.flags.zero, "zero flag should be false");
+        assert!(!state.flags.sign, "sign flag should be false");
     }
 
     #[test]
@@ -102,8 +102,8 @@ mod test {
         state.set_register_16("bx", 1);
         state.run();
         assert_eq!(state.get_register_16("ax"), 1);
-        assert_eq!(state.flags.zero, false, "zero flag should be false");
-        assert_eq!(state.flags.sign, false, "sign flag should be false");
+        assert!(!state.flags.zero, "zero flag should be false");
+        assert!(!state.flags.sign, "sign flag should be false");
     }
 
     #[test]
@@ -112,7 +112,7 @@ mod test {
         state.set_register_16("bx", 1);
         state.run();
         assert_eq!(state.get_register_16("ax"), 2);
-        assert_eq!(state.flags.zero, false, "zero flag should be false");
-        assert_eq!(state.flags.sign, false, "sign flag should be false");
+        assert!(!state.flags.zero, "zero flag should be false");
+        assert!(!state.flags.sign, "sign flag should be false");
     }
 }

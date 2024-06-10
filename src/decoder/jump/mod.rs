@@ -1,6 +1,8 @@
-use super::{instr::Instr, state::DecoderState};
+use crate::decoder::state::Decoder;
 
-pub fn decode_jump(state: &mut DecoderState) -> Option<Instr> {
+use super::instr::Instr;
+
+pub fn decode_jump<T: Decoder>(state: &mut T) -> Option<Instr> {
     let byte = state.get_byte(0);
     match byte {
         _ if 0b01110100 == byte => {

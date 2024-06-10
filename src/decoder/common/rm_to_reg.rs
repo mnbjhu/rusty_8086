@@ -1,10 +1,10 @@
 use crate::decoder::{
     loc::{eac::decode_eac, Location},
     mov::decode_reg,
-    state::DecoderState,
+    state::Decoder,
 };
 
-pub fn decode_rm_to_from_reg(state: &mut DecoderState) -> (Location, Location) {
+pub fn decode_rm_to_from_reg<T: Decoder>(state: &mut T) -> (Location, Location) {
     let first = state.get_byte(0);
     let second = state.get_byte(1);
     state.add_len(2);
@@ -20,7 +20,7 @@ pub fn decode_rm_to_from_reg(state: &mut DecoderState) -> (Location, Location) {
     }
 }
 
-pub fn decode_rm_to_reg(state: &mut DecoderState) -> (Location, Location) {
+pub fn decode_rm_to_reg<T: Decoder>(state: &mut T) -> (Location, Location) {
     let first = state.get_byte(0);
     state.add_len(2);
     let sw = first & 0b00000011;
@@ -40,7 +40,7 @@ pub fn decode_rm_to_reg(state: &mut DecoderState) -> (Location, Location) {
     (rm, imm)
 }
 
-pub fn decode_rm(state: &mut DecoderState) -> Location {
+pub fn decode_rm<T: Decoder>(state: &mut T) -> Location {
     let first = state.get_byte(0);
     let w = first & 0b00000001;
     let second = state.get_byte(1);

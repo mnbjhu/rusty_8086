@@ -1,6 +1,6 @@
-use crate::decoder::{loc::Location, mov::decode_reg, state::DecoderState};
+use crate::decoder::{loc::Location, mov::decode_reg, state::Decoder};
 
-pub fn decode_imm_to_reg(state: &mut DecoderState) -> (Location, Location) {
+pub fn decode_imm_to_reg<T: Decoder>(state: &mut T) -> (Location, Location) {
     let first = state.get_byte(0);
     state.add_len(1);
     let w = (first & 0b00001000) >> 3;

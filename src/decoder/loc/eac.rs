@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::decoder::state::DecoderState;
+use crate::decoder::state::Decoder;
 
 use super::eac_mode::{decode_eac_mode, EffectiveAddressMode};
 
@@ -51,8 +51,8 @@ impl Display for EffectiveAddress {
     }
 }
 
-pub fn decode_eac(state: &mut DecoderState) -> EffectiveAddress {
-    let first = state.get_byte(1); // TODO: Check this is correct
+pub fn decode_eac<T: Decoder>(state: &mut T) -> EffectiveAddress {
+    let first = state.get_byte(1);
     let mode = decode_eac_mode(first & 0b111);
     match first >> 6 {
         0b00 => EffectiveAddress::Mode(mode),

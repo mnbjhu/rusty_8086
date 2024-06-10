@@ -4,7 +4,7 @@ use crate::decoder::{
     instr::{decode_instr, Instr},
     loc::{eac::EffectiveAddress, eac_mode::EffectiveAddressMode, Location, Size},
     mov::{MoveInstr, BX, SI},
-    state::DecoderState,
+    state::{Decoder, DecoderState},
 };
 
 use self::flags::Flags;

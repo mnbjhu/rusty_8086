@@ -72,8 +72,8 @@ mod test {
 
         assert_eq!(state.get_register_8(AL), 1);
         assert_eq!(state.get_register_8(BL), 2);
-        assert_eq!(state.flags.zero, false);
-        assert_eq!(state.flags.sign, false);
+        assert!(!state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -88,8 +88,8 @@ mod test {
 
         assert_eq!(state.get_register_8(AL), 0);
         assert_eq!(state.get_register_8(BL), 0xFF);
-        assert_eq!(state.flags.zero, false);
-        assert_eq!(state.flags.sign, true);
+        assert!(!state.flags.zero);
+        assert!(state.flags.sign);
     }
 
     #[test]
@@ -104,8 +104,8 @@ mod test {
 
         assert_eq!(state.get_register_8(AL), 0);
         assert_eq!(state.get_register_8(BL), 0);
-        assert_eq!(state.flags.zero, true);
-        assert_eq!(state.flags.sign, false);
+        assert!(state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -120,8 +120,8 @@ mod test {
 
         assert_eq!(state.get_register_8(AL), 3);
         assert_eq!(state.get_register_8(BL), 2);
-        assert_eq!(state.flags.zero, false);
-        assert_eq!(state.flags.sign, false);
+        assert!(!state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -136,8 +136,8 @@ mod test {
 
         assert_eq!(state.get_register_8(AL), 0);
         assert_eq!(state.get_register_8(BL), 0xFF);
-        assert_eq!(state.flags.zero, false);
-        assert_eq!(state.flags.sign, false);
+        assert!(!state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -152,8 +152,8 @@ mod test {
 
         assert_eq!(state.get_register_8(AL), 0);
         assert_eq!(state.get_register_8(BL), 0);
-        assert_eq!(state.flags.zero, true);
-        assert_eq!(state.flags.sign, false);
+        assert!(state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -168,8 +168,8 @@ mod test {
 
         assert_eq!(state.get_register_8(AL), 3);
         assert_eq!(state.get_register_8(BL), 2);
-        assert_eq!(state.flags.zero, false);
-        assert_eq!(state.flags.sign, false);
+        assert!(!state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -184,8 +184,8 @@ mod test {
 
         assert_eq!(state.get_register_8(AL), 0);
         assert_eq!(state.get_register_8(BL), 0xFF);
-        assert_eq!(state.flags.zero, false);
-        assert_eq!(state.flags.sign, false);
+        assert!(!state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -200,8 +200,8 @@ mod test {
 
         assert_eq!(state.get_register_8(AL), 0);
         assert_eq!(state.get_register_8(BL), 0);
-        assert_eq!(state.flags.zero, true);
-        assert_eq!(state.flags.sign, false);
+        assert!(state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -216,8 +216,8 @@ mod test {
 
         assert_eq!(state.get_register_16(AX), 1);
         assert_eq!(state.get_register_16(BX), 2);
-        assert_eq!(state.flags.zero, false);
-        assert_eq!(state.flags.sign, false);
+        assert!(!state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -232,8 +232,8 @@ mod test {
 
         assert_eq!(state.get_register_16(AX), 0);
         assert_eq!(state.get_register_16(BX), 0xFFFF);
-        assert_eq!(state.flags.zero, false);
-        assert_eq!(state.flags.sign, true);
+        assert!(!state.flags.zero);
+        assert!(state.flags.sign);
     }
 
     #[test]
@@ -248,8 +248,8 @@ mod test {
 
         assert_eq!(state.get_register_16(AX), 0);
         assert_eq!(state.get_register_16(BX), 0);
-        assert_eq!(state.flags.zero, true);
-        assert_eq!(state.flags.sign, false);
+        assert!(state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -264,8 +264,8 @@ mod test {
 
         assert_eq!(state.get_register_16(AX), 3);
         assert_eq!(state.get_register_16(BX), 2);
-        assert_eq!(state.flags.zero, false);
-        assert_eq!(state.flags.sign, false);
+        assert!(!state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -280,8 +280,8 @@ mod test {
 
         assert_eq!(state.get_register_16(AX), 0);
         assert_eq!(state.get_register_16(BX), 0xFFFF);
-        assert_eq!(state.flags.zero, false);
-        assert_eq!(state.flags.sign, false);
+        assert!(!state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -296,8 +296,8 @@ mod test {
 
         assert_eq!(state.get_register_16(AX), 0);
         assert_eq!(state.get_register_16(BX), 0);
-        assert_eq!(state.flags.zero, true);
-        assert_eq!(state.flags.sign, false);
+        assert!(state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -312,8 +312,8 @@ mod test {
 
         assert_eq!(state.get_register_16(AX), 3);
         assert_eq!(state.get_register_16(BX), 2);
-        assert_eq!(state.flags.zero, false);
-        assert_eq!(state.flags.sign, false);
+        assert!(!state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -328,8 +328,8 @@ mod test {
 
         assert_eq!(state.get_register_16(AX), 0);
         assert_eq!(state.get_register_16(BX), 0xFFFF);
-        assert_eq!(state.flags.zero, false);
-        assert_eq!(state.flags.sign, false);
+        assert!(!state.flags.zero);
+        assert!(!state.flags.sign);
     }
 
     #[test]
@@ -344,7 +344,7 @@ mod test {
 
         assert_eq!(state.get_register_16(AX), 0);
         assert_eq!(state.get_register_16(BX), 0);
-        assert_eq!(state.flags.zero, true);
-        assert_eq!(state.flags.sign, false);
+        assert!(state.flags.zero);
+        assert!(!state.flags.sign);
     }
 }

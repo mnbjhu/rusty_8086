@@ -8,9 +8,10 @@ use crate::decoder::{
     },
     instr::Instr,
     mov::acc::{decode_acc_to_mem, decode_mem_to_acc},
+    state::Decoder,
 };
 
-use super::{loc::Location, state::DecoderState};
+use super::loc::Location;
 
 pub mod acc;
 pub mod immediate;
@@ -39,7 +40,7 @@ pub const CH: &str = "ch";
 pub const DH: &str = "dh";
 pub const BH: &str = "bh";
 
-pub fn decode_mov(state: &mut DecoderState) -> Option<Instr> {
+pub fn decode_mov<T: Decoder>(state: &mut T) -> Option<Instr> {
     let byte = state.get_byte(0);
     match byte {
         // Register/Memory to/from Register

@@ -4,9 +4,10 @@ use crate::decoder::{
     jump::decode_jump,
     mov::{decode_mov, MoveInstr},
     op::decode_op,
+    state::Decoder,
 };
 
-use super::{op::OpInstr, state::DecoderState};
+use super::op::OpInstr;
 
 #[derive(Debug, PartialEq)]
 pub enum Instr {
@@ -27,7 +28,7 @@ impl Display for Instr {
     }
 }
 
-pub fn decode_instr(state: &mut DecoderState) -> Instr {
+pub fn decode_instr<T: Decoder>(state: &mut T) -> Instr {
     let instr = decode_mov(state)
         .or_else(|| decode_op(state))
         .or_else(|| decode_jump(state));
@@ -44,6 +45,7 @@ mod test {
         loc::Location,
         mov::{AX, BX},
         op::OpKind,
+        state::DecoderState,
     };
 
     use super::*;

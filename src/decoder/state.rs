@@ -12,12 +12,14 @@ impl DecoderState {
             instr_len: 0,
         }
     }
+}
 
-    pub fn has_more(&self) -> bool {
+impl Decoder for DecoderState {
+    fn has_more(&self) -> bool {
         self.offset < self.src.len()
     }
 
-    pub fn get_byte(&self, offset: usize) -> u8 {
+    fn get_byte(&self, offset: usize) -> u8 {
         let byte = self
             .src
             .get(self.offset + offset)
@@ -25,22 +27,31 @@ impl DecoderState {
         *byte
     }
 
-    pub fn add_len(&mut self, len: usize) {
+    fn add_len(&mut self, len: usize) {
         self.instr_len += len;
     }
 
-    pub fn next(&mut self) -> bool {
+    fn next(&mut self) -> bool {
         self.offset += self.instr_len;
         self.instr_len = 0;
         self.has_more()
     }
 
-    pub fn get_instr_len(&self) -> usize {
+    fn get_instr_len(&self) -> usize {
         self.instr_len
     }
 
-    pub fn advance(&mut self) {
+    fn advance(&mut self) {
         self.offset += self.instr_len;
         self.instr_len = 0;
     }
+}
+
+pub trait Decoder {
+    fn has_more(&self) -> bool;
+    fn get_byte(&self, offset: usize) -> u8;
+    fn add_len(&mut self, len: usize);
+    fn next(&mut self) -> bool;
+    fn get_instr_len(&self) -> usize;
+    fn advance(&mut self);
 }
