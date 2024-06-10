@@ -2,32 +2,42 @@ use std::fmt::Display;
 
 use crate::decoder::{
     instr::{decode_instr, Instr},
-    loc::Location,
-    mov::MoveInstr,
-    state::{Decoder, DecoderState},
+    loc::{eac::EffectiveAddress, eac_mode::EffectiveAddressMode, Location, Size},
+    mov::{MoveInstr, BX, SI},
+    state::Decoder,
 };
 
 use self::flags::Flags;
 
 pub mod flags;
+pub mod jmp;
 pub mod op_kind;
 
 pub struct SimState {
     registers: [u16; 8],
+    ip: u16,
     flags: Flags,
-    decoder: DecoderState,
+    instr_len: u8,
+    program_size: usize,
+    memory: [u8; 0xFFFF],
 }
 
 impl SimState {
     pub fn new(src: Vec<u8>) -> Self {
+        let mut memory = [0; 0xFFFF];
+        let program_size = src.len();
+        memory[..program_size].copy_from_slice(&src);
         Self {
             registers: [0; 8],
             flags: Flags::default(),
-            decoder: DecoderState::new(src),
+            memory,
+            instr_len: 0,
+            program_size,
+            ip: 0,
         }
     }
 
-    fn get_register_16(&self, name: &str) -> u16 {
+    pub fn get_register_16(&self, name: &str) -> u16 {
         match name {
             "ax" => self.registers[0],
             "bx" => self.registers[1],
@@ -37,11 +47,12 @@ impl SimState {
             "di" => self.registers[5],
             "bp" => self.registers[6],
             "sp" => self.registers[7],
+            "ip" => self.ip,
             _ => panic!("Unknown register: {}", name),
         }
     }
 
-    fn set_register_16(&mut self, name: &str, value: u16) {
+    pub fn set_register_16(&mut self, name: &str, value: u16) {
         match name {
             "ax" => self.registers[0] = value,
             "bx" => self.registers[1] = value,
@@ -89,37 +100,159 @@ impl SimState {
         match instr {
             Instr::Mov(mov) => self.execute_mov(mov),
             Instr::Op(op) => op.execute(self),
-            _ => unimplemented!(),
+            Instr::Je(offset) => self.execute_je(*offset),
+            Instr::Jne(offset) => self.execute_jne(*offset),
         }
     }
 
     fn execute_mov(&mut self, mov: &MoveInstr) {
-        match (&mov.dest, &mov.src) {
-            (Location::Reg(dest), Location::Reg(src)) => {
-                if is_byte(dest) {
-                    let value = self.get_register_8(src);
-                    self.set_register_8(dest, value);
-                } else {
-                    let value = self.get_register_16(src);
-                    self.set_register_16(dest, value);
-                }
+        match (mov.dest.implied_size(), mov.src.implied_size()) {
+            (None, None) | (Some(Size::Word), _) | (_, Some(Size::Word)) => {
+                self.set_value_word(&mov.dest, self.get_value_word(&mov.src))
             }
-            (Location::Reg(dest), Location::Immediate8(value)) => {
-                self.set_register_8(dest, *value);
+            (Some(Size::Byte), _) | (_, Some(Size::Byte)) => {
+                self.set_value_byte(&mov.dest, self.get_value_byte(&mov.src))
             }
-            (Location::Reg(dest), Location::Immediate16(value)) => {
-                self.set_register_16(dest, *value);
-            }
-            _ => unimplemented!(),
         }
     }
 
     pub fn run(&mut self) {
-        while self.decoder.has_more() {
-            let instr = decode_instr(&mut self.decoder);
-            self.decoder.advance();
+        while self.has_more() {
+            let instr = decode_instr(self);
+            self.advance();
             self.execute(&instr);
         }
+    }
+
+    pub fn get_value_byte(&self, loc: &Location) -> u8 {
+        match loc {
+            Location::Reg(reg) => self.get_register_8(reg),
+            Location::Immediate8(value) => *value,
+            Location::Immediate16(value) => panic!("Expected byte, got word: {}", value),
+            Location::Mem(addr) => self.memory[*addr as usize],
+            Location::Eac(eac) => {
+                let addr = self.get_addr(eac);
+                self.memory[addr as usize]
+            }
+        }
+    }
+
+    pub fn set_value_byte(&mut self, loc: &Location, value: u8) {
+        match loc {
+            Location::Reg(reg) => self.set_register_8(reg, value),
+            Location::Immediate8(_) => panic!("Cannot set value to immediate"),
+            Location::Immediate16(_) => panic!("Expected byte, got word: {}", value),
+            Location::Mem(addr) => self.memory[*addr as usize] = value,
+            Location::Eac(eac) => {
+                let addr = self.get_addr(eac);
+                self.memory[addr as usize] = value;
+            }
+        }
+    }
+
+    pub fn get_value_word(&self, loc: &Location) -> u16 {
+        match loc {
+            Location::Reg(reg) => self.get_register_16(reg),
+            Location::Immediate8(value) => *value as u16,
+            Location::Immediate16(value) => *value,
+            Location::Mem(addr) => {
+                let low = self.memory[*addr as usize] as u16;
+                let high = self.memory[*addr as usize + 1] as u16;
+                high << 8 | low
+            }
+            Location::Eac(eac) => {
+                let addr = self.get_addr(eac);
+                let low = self.memory[addr as usize] as u16;
+                let high = self.memory[addr as usize + 1] as u16;
+                high << 8 | low
+            }
+        }
+    }
+
+    pub fn set_value_word(&mut self, loc: &Location, value: u16) {
+        match loc {
+            Location::Reg(reg) => self.set_register_16(reg, value),
+            Location::Immediate8(_) => panic!("Cannot set value to immediate"),
+            Location::Immediate16(_) => panic!("Expected byte, got word: {}", value),
+            Location::Mem(addr) => {
+                self.memory[*addr as usize] = value as u8;
+                self.memory[*addr as usize + 1] = (value >> 8) as u8;
+            }
+            Location::Eac(eac) => {
+                let addr = self.get_addr(eac);
+                self.memory[addr as usize] = value as u8;
+                self.memory[addr as usize + 1] = (value >> 8) as u8;
+            }
+        }
+    }
+
+    fn get_addr(&self, eac: &EffectiveAddress) -> u16 {
+        match eac.mode() {
+            EffectiveAddressMode::BxSi => {
+                let bx = self.get_register_16(BX);
+                let si = self.get_register_16(SI);
+                bx.wrapping_add(si).wrapping_add_signed(eac.offset())
+            }
+            EffectiveAddressMode::BxDi => {
+                let bx = self.get_register_16(BX);
+                let di = self.get_register_16(SI);
+                bx.wrapping_add(di).wrapping_add_signed(eac.offset())
+            }
+            EffectiveAddressMode::BpSi => {
+                let bp = self.get_register_16(BX);
+                let si = self.get_register_16(SI);
+                bp.wrapping_add(si).wrapping_add_signed(eac.offset())
+            }
+            EffectiveAddressMode::BpDi => {
+                let bp = self.get_register_16(BX);
+                let di = self.get_register_16(SI) as i16;
+                bp.wrapping_add_signed(di).wrapping_add_signed(eac.offset())
+            }
+            EffectiveAddressMode::Si => {
+                let si = self.get_register_16(SI);
+                si.wrapping_add_signed(eac.offset())
+            }
+            EffectiveAddressMode::Di => {
+                let di = self.get_register_16(SI);
+                di.wrapping_add_signed(eac.offset())
+            }
+            EffectiveAddressMode::Bp => {
+                let bp = self.get_register_16(BX);
+                bp.wrapping_add_signed(eac.offset())
+            }
+            EffectiveAddressMode::Bx => {
+                let bx = self.get_register_16(BX);
+                bx.wrapping_add_signed(eac.offset())
+            }
+        }
+    }
+}
+
+impl Decoder for SimState {
+    fn has_more(&self) -> bool {
+        self.ip < self.program_size as u16
+    }
+
+    fn get_byte(&self, offset: usize) -> u8 {
+        self.memory[self.ip as usize + offset]
+    }
+
+    fn add_len(&mut self, len: usize) {
+        self.instr_len += len as u8;
+    }
+
+    fn next(&mut self) -> bool {
+        self.advance();
+        self.has_more()
+    }
+
+    fn get_instr_len(&self) -> usize {
+        self.instr_len as usize
+    }
+
+    fn advance(&mut self) {
+        self.ip += self.instr_len as u16;
+        self.instr_len = 0;
     }
 }
 
@@ -142,7 +275,7 @@ impl Display for SimState {
 
 #[cfg(test)]
 mod test {
-    use crate::{decoder::state::DecoderState, sim::SimState};
+    use crate::sim::SimState;
 
     #[test]
     fn test_register_16() {
@@ -217,8 +350,11 @@ mod test {
             registers: [
                 0x1234, 0x5678, 0x9ABC, 0xDEF0, 0x1357, 0x2468, 0xACE0, 0xBEEF,
             ],
-            decoder: DecoderState::new(vec![]),
             flags: Default::default(),
+            memory: [0; 0xFFFF],
+            instr_len: 0,
+            program_size: 0,
+            ip: 0,
         };
         let expected =
             "ax: 1234\nbx: 5678\ncx: 9abc\ndx: def0\nsp: beef\nbp: ace0\nsi: 1357\ndi: 2468\n";

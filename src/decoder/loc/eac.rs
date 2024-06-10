@@ -11,6 +11,24 @@ pub enum EffectiveAddress {
     Word(EffectiveAddressMode, i16),
 }
 
+impl EffectiveAddress {
+    pub fn mode(&self) -> EffectiveAddressMode {
+        match self {
+            EffectiveAddress::Mode(mode) => *mode,
+            EffectiveAddress::Byte(mode, _) => *mode,
+            EffectiveAddress::Word(mode, _) => *mode,
+        }
+    }
+
+    pub fn offset(&self) -> i16 {
+        match self {
+            EffectiveAddress::Mode(_) => 0,
+            EffectiveAddress::Byte(_, offset) => *offset as i16,
+            EffectiveAddress::Word(_, offset) => *offset,
+        }
+    }
+}
+
 impl Display for EffectiveAddress {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
