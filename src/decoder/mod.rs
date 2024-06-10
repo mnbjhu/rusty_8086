@@ -1,4 +1,7 @@
-use crate::decoder::instr::{decode_instr, Instr};
+use crate::decoder::{
+    instr::{decode_instr, Instr},
+    state::Decoder,
+};
 
 use self::state::DecoderState;
 

@@ -1,6 +1,6 @@
-use crate::decoder::{loc::Location, mov::MoveInstr, state::DecoderState};
+use crate::decoder::{loc::Location, mov::MoveInstr, state::Decoder};
 
-pub fn decode_mem_to_acc(state: &mut DecoderState) -> MoveInstr {
+pub fn decode_mem_to_acc<T: Decoder>(state: &mut T) -> MoveInstr {
     let first = state.get_byte(0);
     state.add_len(1);
     let w = first & 0b00000001;
@@ -21,7 +21,7 @@ pub fn decode_mem_to_acc(state: &mut DecoderState) -> MoveInstr {
     }
 }
 
-pub fn decode_acc_to_mem(state: &mut DecoderState) -> MoveInstr {
+pub fn decode_acc_to_mem<T: Decoder>(state: &mut T) -> MoveInstr {
     let first = state.get_byte(0);
     state.add_len(1);
     let w = first & 0b00000001;
